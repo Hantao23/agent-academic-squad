@@ -61,16 +61,15 @@ Answer directly when the task is bounded, the main dispatcher already has the de
 - Keep at most one writer in a shared worktree. Read-only agents may run alongside the writer when they do not depend on an unstable artifact.
 - Let the main dispatcher synthesize the returned result for the user. Do not require JSON envelopes, task IDs, approval records, or mandatory independent review.
 
-## Build a bounded context capsule
+## Assemble an adaptive context handoff
 
-- Do not delegate by copying an arbitrary prior message, the whole transcript, or a conclusion-bearing assistant summary.
-- When the subagent tool exposes `fork_turns`, use `fork_turns: "none"` by default and write a fresh evidence capsule. This is the normal route for code, experiment, mathematics, and source-grounded paper tasks.
-- Inherit recent conversation only when its exact wording contains essential user authority, a definition, or a preference that cannot be compressed safely. Use the smallest positive value, normally one or two turns. Never use `fork_turns: "all"` by default.
-- Keep the capsule concise, normally about 150--400 words excluding paths and the exact task statement. Include only the objective, authorized scope, user constraints and accepted decisions, verified facts with source paths or anchors, relevant artifacts, unresolved questions, decision criteria, deliverable, relevant domain skill, and stop condition.
-- Prefer an evidence index such as file paths, line anchors, function names, experiment IDs, paper identifiers, equations, or figure numbers. Do not paste file contents that the subagent can read directly.
-- Quote a short user instruction only when its wording matters, and label it as the user's instruction. Do not pass the main dispatcher's preferred answer, unverified causal story, hidden reasoning, or conclusion-shaped summary.
-- Tell the subagent to verify the decisive evidence and widen its reading only when the supplied index is insufficient. It must report that expansion rather than silently reconstructing the whole repository or discussion.
-- For a fully independent assessment, use no inherited turns and pass only the task, neutral constraints, and raw artifact index.
+- Before spawning, separate candidate context into: exact conversation evidence worth preserving, neutral artifact or environment facts, and material to exclude. Preserve user authority, definitions, accepted decisions, preferences, and decisive raw observations; exclude irrelevant discussion, hidden reasoning, unverified causal stories, and the main dispatcher's preferred answer.
+- Choose `fork_turns` deliberately when the subagent tool exposes it. Use the smallest positive value when a contiguous block of recent turns contains essential context and has low contamination risk. Use `fork_turns: "none"` when artifacts already carry the task, relevant conversation is scattered or old, prior assistant conclusions would bias the review, or the user requests independence.
+- Remember that `fork_turns` copies a recent contiguous window rather than arbitrary messages. Do not inherit many irrelevant turns merely to reach one older fact. Extract that fact into the capsule instead. Use `fork_turns: "all"` only when the conversation is short, nearly every turn is essential, and inherited assistant content does not compromise independence.
+- Always supplement inherited or extracted conversation with a concise neutral capsule. Include the objective, authorized scope, selected user instructions or accepted decisions, verified facts, an evidence index, unresolved questions, decision criteria, deliverable, relevant domain skill, and stop condition.
+- Prefer an evidence index such as file paths and line anchors, function names, experiment IDs, paper identifiers, equations, figure numbers, or saved result locations. Do not paste file contents that the subagent can read directly.
+- Quote only the smallest conversation fragment whose exact wording matters. Label it as `User instruction`, `Accepted decision`, or `Observed output`; distinguish direct quotes from neutral paraphrases. Treat inherited assistant statements as navigation, not as evidence.
+- Keep the added capsule compact, normally about 150--400 words excluding paths and necessary exact excerpts. Tell the subagent to verify decisive evidence and widen its reading only when the supplied index is insufficient; it must report that expansion rather than silently reconstructing the whole repository or discussion.
 
 ## Return useful handoffs
 

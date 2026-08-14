@@ -37,7 +37,7 @@ Workload cost estimates the investigation, implementation, experiment, or readin
 | Shape | Default handling |
 | --- | --- |
 | Bounded workload, ordinary stakes | Main may answer directly; use Sol medium or high if delegated |
-| Bounded workload, high stakes | Narrow evidence review with Sol xhigh and a bounded evidence capsule |
+| Bounded workload, high stakes | Narrow evidence review with Sol xhigh and an adaptive context handoff |
 | High workload, ordinary stakes | Plan first when execution is not already authorized and accepted |
 | High workload, high stakes | Plan first, expose material decisions, then use the appropriate strong executor or reviewer |
 
