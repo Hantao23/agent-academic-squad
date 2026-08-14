@@ -2,6 +2,8 @@
 
 Treat the subagent model as the task owner and the external skill as its workflow and tool guide.
 
+The `nature-*` workflows referenced below are provided by [Yuan1z0825/nature-skills](https://github.com/Yuan1z0825/nature-skills) under the [Apache License 2.0](https://github.com/Yuan1z0825/nature-skills/blob/main/LICENSE). This file defines squad routing only and does not redistribute their implementations.
+
 ## Dispatch rules
 
 - Assign at most one primary external skill to a subtask. Split distinct workflows when their deliverables justify separate stages.
