@@ -40,7 +40,7 @@ flowchart TD
 
 - 用户指定的模型和推理强度永远优先于默认路由；
 - 默认只派一个子代理，只有真正独立的工作才并行；
-- 主模型提供简短、无结论污染的上下文交接，避免子代理重读整个项目；
+- 主模型默认不复制聊天记录，而是通过简短、可核验的 evidence capsule 传递目标、约束和文件锚点；
 - 规划请求只返回计划，不在同一轮偷偷执行；
 - 审查任务默认只报告问题，不擅自修改产物；
 - 小任务由主模型直接回答，不为“使用多代理”而使用多代理。
@@ -140,4 +140,4 @@ agent-academic-squad/
 
 ## English summary
 
-`agent-academic-squad` is a lightweight Codex skill for user-directed academic delegation. It separates planning from execution, routes code/experiment, mathematics, and paper tasks by workload and decision stakes, minimizes context rediscovery through neutral warm handoffs, and always lets the user override model choices.
+`agent-academic-squad` is a lightweight Codex skill for user-directed academic delegation. It separates planning from execution, routes code/experiment, mathematics, and paper tasks by workload and decision stakes, replaces inherited transcripts with bounded evidence capsules, and always lets the user override model choices.
