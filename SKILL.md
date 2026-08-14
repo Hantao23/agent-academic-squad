@@ -59,7 +59,7 @@ Answer directly when the task is bounded, the main dispatcher already has the de
 - Use one subagent by default.
 - Add parallel subagents only for genuinely independent work that will materially reduce elapsed time.
 - Keep at most one writer in a shared worktree. Read-only agents may run alongside the writer when they do not depend on an unstable artifact.
-- Let the main dispatcher synthesize the returned result for the user. Do not require JSON envelopes, task IDs, approval records, or mandatory independent review.
+- Let the main dispatcher edit the returned result for clarity without collapsing material decisions, exact parameters, operational steps, validation, recovery, or acceptance criteria. Do not require JSON envelopes, task IDs, approval records, or mandatory independent review.
 
 ## Assemble an adaptive context handoff
 
@@ -71,6 +71,16 @@ Answer directly when the task is bounded, the main dispatcher already has the de
 - Quote only the smallest conversation fragment whose exact wording matters. Label it as `User instruction`, `Accepted decision`, or `Observed output`; distinguish direct quotes from neutral paraphrases. Treat inherited assistant statements as navigation, not as evidence.
 - Keep the added capsule compact, normally about 150--400 words excluding paths and necessary exact excerpts. Tell the subagent to verify decisive evidence and widen its reading only when the supplied index is insufficient; it must report that expansion rather than silently reconstructing the whole repository or discussion.
 
+## Preserve substantial plans
+
+- Treat a delegated plan as substantial when faithful delivery requires exact commands or configuration, several dependent stages, explicit recovery or acceptance criteria, multiple decision branches, or enough detail that a chat-only summary would omit execution-critical information.
+- Save a substantial plan as Markdown when the user explicitly invoked this skill for planning, requested a saved plan, or otherwise authorized a plan artifact. Prefer the user's exact path. Otherwise resolve `<codex-home>` from the installed skill location and use `<codex-home>/agent-academic-squad/plans/<YYYY-MM-DD>/<HHMMSS>-<task-slug>.md`.
+- Resolve `<codex-home>` as the parent of the `skills/` directory containing this installed skill; do not hardcode a host-specific home path. Create dated directories only when saving an authorized plan. Never overwrite an existing plan silently; use a new timestamp or an explicit revision suffix.
+- Store the normalized final plan, not the subagent transcript or hidden reasoning. Preserve the objective, verified facts and source anchors, exact parameters, ordered dependencies, commands or configuration needed for execution, model assignments, unresolved decisions, validation, recovery, stop conditions, acceptance criteria, cost drivers, and the statement that execution has not started.
+- Before replying, compare the saved plan with the subagent's final deliverable and restore any missing decision branch or execution-critical detail. Do not convert an unresolved choice into a default recommendation unless the user already authorized it.
+- In chat, lead with the result and provide a clickable absolute path. Also state every unresolved user decision, the most material risks, and whether execution has started. The chat response may summarize details already preserved in the file, but it must remain sufficient for the user to decide whether to approve execution.
+- When saving is not authorized or the path is not writable, return the faithful plan in chat instead of compressing it, and report the unsaved status.
+
 ## Return useful handoffs
 
 For a plan, return:
@@ -80,6 +90,7 @@ For a plan, return:
 - proposed model for each executed part;
 - rough time or cost drivers;
 - material risks and decisions;
+- the saved-plan path when a plan artifact was created;
 - a clear statement that execution has not started.
 
 For completed execution, return:
