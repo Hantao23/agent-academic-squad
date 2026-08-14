@@ -59,7 +59,7 @@ Answer directly when the task is bounded, the main dispatcher already has the de
 - Use one subagent by default.
 - Add parallel subagents only for genuinely independent work that will materially reduce elapsed time.
 - Keep at most one writer in a shared worktree. Read-only agents may run alongside the writer when they do not depend on an unstable artifact.
-- Let the main dispatcher edit the returned result for clarity without collapsing material decisions, exact parameters, operational steps, validation, recovery, or acceptance criteria. Do not require JSON envelopes, task IDs, approval records, or mandatory independent review.
+- Let the main dispatcher edit the returned result only to remove transient investigation or reasoning narration, exact repetition, and demonstrably irrelevant material. When in doubt, retain the content. Never remove an unresolved branch, exact parameter, dependent step, command, artifact path, validation, recovery or stop condition, acceptance criterion, cost driver, material risk, or model assignment. Do not require JSON envelopes, task IDs, approval records, or mandatory independent review.
 
 ## Assemble an adaptive context handoff
 
@@ -76,20 +76,23 @@ Answer directly when the task is bounded, the main dispatcher already has the de
 - Treat a delegated plan as substantial when faithful delivery requires exact commands or configuration, several dependent stages, explicit recovery or acceptance criteria, multiple decision branches, or enough detail that a chat-only summary would omit execution-critical information.
 - Save a substantial plan as Markdown when the user explicitly invoked this skill for planning, requested a saved plan, or otherwise authorized a plan artifact. Prefer the user's exact path. Otherwise resolve `<codex-home>` from the installed skill location and use `<codex-home>/agent-academic-squad/plans/<YYYY-MM-DD>/<HHMMSS>-<task-slug>.md`.
 - Resolve `<codex-home>` as the parent of the `skills/` directory containing this installed skill; do not hardcode a host-specific home path. Create dated directories only when saving an authorized plan. Never overwrite an existing plan silently; use a new timestamp or an explicit revision suffix.
-- Store the normalized final plan, not the subagent transcript or hidden reasoning. Preserve the objective, verified facts and source anchors, exact parameters, ordered dependencies, commands or configuration needed for execution, model assignments, unresolved decisions, validation, recovery, stop conditions, acceptance criteria, cost drivers, and the statement that execution has not started.
-- Before replying, compare the saved plan with the subagent's final deliverable and restore any missing decision branch or execution-critical detail. Do not convert an unresolved choice into a default recommendation unless the user already authorized it.
-- In chat, lead with the result and provide a clickable absolute path. Also state every unresolved user decision, the most material risks, and whether execution has started. The chat response may summarize details already preserved in the file, but it must remain sufficient for the user to decide whether to approve execution.
+- Store the normalized final plan, not the subagent transcript or hidden reasoning. Preserve the objective, verified facts and source anchors, exact parameters, ordered dependencies, commands and configuration needed for execution, all input and output artifact paths, model assignments, every unresolved decision branch, validation, recovery, stop conditions, acceptance criteria, cost drivers, the complete material-risk list, and the statement that execution has not started.
+- Use these sections in every saved substantial plan, in this order and localized to the user's language: `Conclusion summary`; `Decisions required from the user`; `Verified facts and sources`; `Complete executable plan`; `Parameters, commands, and artifact paths`; `Validation, recovery, and stop conditions`; `Cost, risks, and model assignments`; `Execution status`. Keep the decisions section even when empty and state `None` explicitly.
+- Before replying, compare the saved plan with the subagent's final deliverable and restore any missing decision branch or execution-critical detail. Preserve all unresolved alternatives in both the file and chat; do not present only the recommended route or convert an unresolved choice into a default unless the user already authorized it.
+- Treat the plan file as a supplement to chat, never as a substitute. Even when a file exists, the chat response must include a self-contained description of the entire plan mainline in dependency order, every decision still required from the user with the options and consequences, the most material risks, the execution status, and a clickable absolute path. The mainline may be paraphrased rather than copied verbatim, but it must let the user understand the approach and decide whether to proceed without opening the file.
+- Detailed commands, long configuration blocks, and large validation tables may live primarily in the file only after their role and place in the mainline have been explained in chat. Do not shorten the chat merely because a file was created.
 - When saving is not authorized or the path is not writable, return the faithful plan in chat instead of compressing it, and report the unsaved status.
 
 ## Return useful handoffs
 
 For a plan, return:
 
-- objective and deliverables;
+- objective, deliverables, and a self-contained description of the entire plan mainline;
 - ordered work and dependencies;
+- every unresolved user decision with options and consequences;
 - proposed model for each executed part;
 - rough time or cost drivers;
-- material risks and decisions;
+- the complete material-risk list;
 - the saved-plan path when a plan artifact was created;
 - a clear statement that execution has not started.
 
