@@ -1,0 +1,4 @@
+interface:
+  display_name: "agent学术小分队"
+  short_description: "按工作量、决策风险与学术领域调度规划、执行和审查子代理"
+  default_prompt: "Use $agent-academic-squad to route this academic task to the right planning, execution, or review subagent and return the result for my review."
