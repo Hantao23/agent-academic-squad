@@ -2,7 +2,7 @@
 
 一个面向 Codex 的轻量学术任务调度 Skill。
 
-它不建立“公司式”的多代理组织，也不引入审批门、任务卡或持久状态机。用户是指挥者，主模型只负责判断任务形态、选择合适的子代理，并把结果交还给用户验收。
+它以用户指令为中心，根据任务阶段、学术领域、工作量和决策风险选择处理方式：由主模型直接回答，或委派合适的子代理完成规划、执行与审查，并返回可验收的结果和证据。
 
 ## 它解决什么问题
 
@@ -135,4 +135,3 @@ agent-academic-squad/
 ## English summary
 
 `agent-academic-squad` is a lightweight Codex skill for user-directed academic delegation. It separates planning from execution, routes code/experiment, mathematics, and paper tasks by workload and decision stakes, minimizes context rediscovery through neutral warm handoffs, and always lets the user override model choices.
-
