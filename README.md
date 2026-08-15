@@ -146,9 +146,9 @@ Run real, isolated JSONL smoke evals only when the Codex CLI has valid credentia
 python3 scripts/run_e2e_evals.py --max-cases 3
 ```
 
-The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces and summaries under `evals/results/`. Add `--strict-isolation` when `OPENAI_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. Authentication, network, and timeout failures are reported separately from Skill failures. Some routing fields remain explicitly `unverifiable` until the Codex JSONL surface exposes stable events for them.
+The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces and summaries under `evals/results/`. Add `--strict-isolation` when `CODEX_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. The runner removes ambient OpenAI key variables and passes only `CODEX_API_KEY` to each `codex exec` subprocess. Authentication, network, and timeout failures are reported separately from Skill failures. Some routing fields remain explicitly `unverifiable` until the Codex JSONL surface exposes stable events for them.
 
-`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, runs three cases by default, and uploads redacted artifacts for 14 days. Dataset validation and dry runs are not presented as real model evaluations.
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, runs three cases by default, and uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 

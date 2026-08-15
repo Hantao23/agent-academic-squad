@@ -15,8 +15,6 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,6 +27,7 @@ jobs:
         run: npm install --global @openai/codex
       - name: Run isolated JSONL E2E evals
         env:
+          CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           E2E_MAX_CASES: ${{ inputs.max_cases }}
         run: python3 scripts/run_e2e_evals.py --strict-isolation --max-cases "$E2E_MAX_CASES"
       - name: Upload redacted traces and summaries

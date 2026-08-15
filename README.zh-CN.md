@@ -146,9 +146,9 @@ python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 python3 scripts/run_e2e_evals.py --max-cases 3
 ```
 
-runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把已忽略追踪的 trace 和汇总保存到 `evals/results/`。有可用的 `OPENAI_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。认证、网络和超时失败与 Skill 失败分开报告；Codex JSONL 尚未稳定暴露的路由字段会明确标记为 `unverifiable`。
+runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把已忽略追踪的 trace 和汇总保存到 `evals/results/`。有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 会移除环境中原有的 OpenAI 密钥变量，只把 `CODEX_API_KEY` 传给每个 `codex exec` 子进程。认证、网络和超时失败与 Skill 失败分开报告；Codex JSONL 尚未稳定暴露的路由字段会明确标记为 `unverifiable`。
 
-`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，默认运行3条并保留脱敏产物14天。数据集校验和 dry-run 不会冒充真实模型评测。
+`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。workflow 默认运行3条并保留脱敏产物14天。数据集校验和 dry-run 不会冒充真实模型评测。
 
 ## 使用示例
 

@@ -109,6 +109,29 @@ def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
     return sorted(path for path, digest in after.items() if before.get(path) != digest)
 
 
+def codex_environment(
+    cache_home: Path,
+    workspace: Path,
+    strict_isolation: bool,
+    api_key: str | None,
+) -> dict[str, str]:
+    environment = os.environ.copy()
+    environment.pop("OPENAI_API_KEY", None)
+    environment.pop("CODEX_API_KEY", None)
+    environment["XDG_CACHE_HOME"] = str(cache_home)
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    if api_key:
+        environment["CODEX_API_KEY"] = api_key
+    if strict_isolation:
+        isolated_home = workspace / ".home"
+        isolated_codex_home = workspace / ".codex"
+        isolated_home.mkdir(mode=0o700)
+        isolated_codex_home.mkdir(mode=0o700)
+        environment["HOME"] = str(isolated_home)
+        environment["CODEX_HOME"] = str(isolated_codex_home)
+    return environment
+
+
 def event_observations(events: list[dict[str, Any]], changed: list[str]) -> dict[str, Any]:
     commands: list[str] = []
     messages: list[str] = []
@@ -299,6 +322,7 @@ def run_case(
     codex_binary: str,
     timeout: int,
     strict_isolation: bool,
+    api_key: str | None,
 ) -> dict[str, Any]:
     case_id = case["id"]
     workspace = run_root / "workspaces" / case_id
@@ -321,16 +345,7 @@ def run_case(
         str(workspace),
         case["prompt"],
     ]
-    environment = os.environ.copy()
-    environment["XDG_CACHE_HOME"] = str(cache_home)
-    environment["PYTHONDONTWRITEBYTECODE"] = "1"
-    if strict_isolation:
-        isolated_home = workspace / ".home"
-        isolated_codex_home = workspace / ".codex"
-        isolated_home.mkdir(mode=0o700)
-        isolated_codex_home.mkdir(mode=0o700)
-        environment["HOME"] = str(isolated_home)
-        environment["CODEX_HOME"] = str(isolated_codex_home)
+    environment = codex_environment(cache_home, workspace, strict_isolation, api_key)
     timed_out = False
     try:
         completed = subprocess.run(
@@ -398,15 +413,16 @@ def main() -> int:
     parser.add_argument(
         "--strict-isolation",
         action="store_true",
-        help="Use isolated HOME/CODEX_HOME; requires OPENAI_API_KEY",
+        help="Use isolated HOME/CODEX_HOME; requires CODEX_API_KEY",
     )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
     if args.timeout <= 0 or (args.max_cases is not None and args.max_cases <= 0):
         parser.error("timeout and max-cases must be positive")
-    if args.strict_isolation and not os.environ.get("OPENAI_API_KEY"):
-        print("strict isolation requires OPENAI_API_KEY", file=sys.stderr)
+    api_key = os.environ.pop("CODEX_API_KEY", None)
+    if args.strict_isolation and not api_key:
+        print("strict isolation requires CODEX_API_KEY", file=sys.stderr)
         return 2
 
     try:
@@ -435,7 +451,7 @@ def main() -> int:
     run_root = ROOT / "evals" / "results" / run_id
     run_root.mkdir(parents=True, exist_ok=False)
     results = [
-        run_case(case, run_root, args.codex, args.timeout, args.strict_isolation)
+        run_case(case, run_root, args.codex, args.timeout, args.strict_isolation, api_key)
         for case in cases
     ]
     environment_failures = sum(result["environment_failure"] is not None for result in results)
