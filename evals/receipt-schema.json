@@ -7,7 +7,8 @@
     "final_state",
     "task_completed",
     "claimed_execution",
-    "skill_used",
+    "host_loaded",
+    "routing_used",
     "stage",
     "domain",
     "handling",
@@ -34,7 +35,8 @@
     },
     "task_completed": {"type": "boolean"},
     "claimed_execution": {"type": "boolean"},
-    "skill_used": {"type": "boolean"},
+    "host_loaded": {"type": "boolean"},
+    "routing_used": {"type": "boolean"},
     "stage": {
       "type": "string",
       "enum": ["none", "plan", "execute", "review"]

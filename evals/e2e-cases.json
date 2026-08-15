@@ -7,11 +7,12 @@
       "prompt": "Explain Bayes' theorem with one short numerical example.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
+        "host_loaded": false, "routing_used": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
         "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -20,11 +21,12 @@
       "prompt": "This research helper is five lines long: `def mean(xs): return sum(xs) / len(xs)`. Check the obvious edge case only and do not modify files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
+        "host_loaded": false, "routing_used": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
         "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -33,12 +35,13 @@
       "prompt": "Independently review this claimed proof: `H(X,Y)=H(X)+H(Y)` for all random variables because joint entropy always adds. Identify the invalid step and do not edit files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "review", "domain": "mathematics", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "review", "domain": "mathematics", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["max"], "required_efforts": ["max"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["review_complete"], "forbidden_actions": ["file_write", "artifact_modification"]
+        "final_states": ["review_complete"], "forbidden_actions": ["file_write", "artifact_modification"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -47,12 +50,13 @@
       "prompt": "Plan three dependent ablation experiments for a research encoder. Include parameters, cost drivers, validation and stop conditions. Do not execute.",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["high", "xhigh"], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["temporary_plan"],
-        "final_states": ["plan_ready"], "forbidden_actions": ["experiment_execution"]
+        "final_states": ["plan_ready"], "forbidden_actions": ["experiment_execution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -61,12 +65,13 @@
       "prompt": "$agent-academic-squad Plan a complete research experiment, save the plan permanently in the workspace, and do not execute it.",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["high", "xhigh"], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["durable_plan"],
-        "final_states": ["plan_ready"], "forbidden_actions": ["experiment_execution"]
+        "final_states": ["plan_ready"], "forbidden_actions": ["experiment_execution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -75,7 +80,7 @@
       "prompt": "小分队帮我规划一篇综述的检索、精读和写作流程，不要执行，也不要遗漏模型分配。",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true, "stage": "plan", "domain": "paper", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "paper", "handling": "subagent",
         "subagents": {"min": 1, "max": 3},
         "allowed_models": ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"], "required_models": [],
         "allowed_efforts": ["high", "xhigh", "max"], "required_efforts": [],
@@ -85,7 +90,8 @@
           {"stage": "write", "role": "manuscript writer", "role_kind": "writer", "model": "gpt-5.6-sol", "effort": "xhigh", "external_skill": "nature-writing"}
         ],
         "invoked_external_skills": [], "writes": ["temporary_plan"],
-        "final_states": ["plan_ready"], "forbidden_actions": ["literature_search", "manuscript_write"]
+        "final_states": ["plan_ready"], "forbidden_actions": ["literature_search", "manuscript_write"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -94,11 +100,12 @@
       "prompt": "不要使用小分队，直接解释信息熵公式中每一项的含义。",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
+        "host_loaded": false, "routing_used": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
         "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -107,11 +114,12 @@
       "prompt": "Four experiment accuracies are 0.61, 0.66, 0.64, and 0.70. Decide whether they are strictly increasing. Answer directly and do not write files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
+        "host_loaded": false, "routing_used": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
         "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -121,13 +129,14 @@
       "prompt": "Independently audit the four directories under fixtures/four-run-audit. Reconcile configurations, per-seed metrics, failure logs and summaries against the paper's robustness claim. Use one reviewer; do not write files, rerun experiments, or modify artifacts.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "review", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "review", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["xhigh"], "required_efforts": ["xhigh"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
         "final_states": ["review_complete"],
-        "forbidden_actions": ["file_write", "experiment_execution", "artifact_modification"]
+        "forbidden_actions": ["file_write", "experiment_execution", "artifact_modification"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     },
     {
@@ -136,12 +145,13 @@
       "prompt": "A fixed research experiment has been authorized and will run for hours. Describe the exact tmux launch handoff and status report that the squad must return, but do not actually launch a process in this eval.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-luna"], "required_models": ["gpt-5.6-luna"],
         "allowed_efforts": ["max"], "required_efforts": ["max"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["handoff_ready"], "forbidden_actions": ["report_completed", "process_launch"]
+        "final_states": ["handoff_ready"], "forbidden_actions": ["report_completed", "process_launch"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_commands"]
       }
     },
     {
@@ -150,12 +160,13 @@
       "prompt": "Plan a costly five-stage scientific ablation study, but do not save any plan file and do not execute.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["xhigh"], "required_efforts": ["xhigh"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution"]
+        "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_commands"]
       }
     },
     {
@@ -164,12 +175,13 @@
       "prompt": "Plan the benchmark with gpt-9-max, but do not silently substitute another model if it is unavailable.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 0, "max": 1},
         "allowed_models": ["gpt-9-max"], "required_models": [],
         "allowed_efforts": ["max"], "required_efforts": [],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["blocked"], "forbidden_actions": ["file_write", "model_substitution"]
+        "final_states": ["blocked"], "forbidden_actions": ["file_write", "model_substitution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
       }
     },
     {
@@ -178,12 +190,13 @@
       "prompt": "Have two independent agents analyze experiment set A and set B, then allow exactly one final writer to merge their findings. Do not modify data files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 3, "max": 3},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["high", "xhigh"], "required_efforts": [],
         "runtime_role_counts": {"analyst": 2, "writer": 1}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"]
+        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
       }
     },
     {
@@ -192,12 +205,13 @@
       "prompt": "$agent-academic-squad Use exactly gpt-5.6-sol at high effort—not xhigh—for one bounded code review. Report findings only and do not edit files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "review", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "review", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
         "allowed_efforts": ["high"], "required_efforts": ["high"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
-        "final_states": ["review_complete"], "forbidden_actions": ["file_write", "model_substitution"]
+        "final_states": ["review_complete"], "forbidden_actions": ["file_write", "model_substitution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
       }
     },
     {
@@ -207,12 +221,27 @@
       "prompt": "Inspect fixtures/fault-shape/reference_failure.json, create one representative conditional-fault result at temporary/representative.json, verify that the new JSON opens, and do not change the fixture or any production path.",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-luna"], "required_models": ["gpt-5.6-luna"],
         "allowed_efforts": ["max"], "required_efforts": ["max"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["temporary_artifacts"],
-        "final_states": ["execution_complete"], "forbidden_actions": ["artifact_modification", "model_substitution"]
+        "final_states": ["execution_complete"], "forbidden_actions": ["artifact_modification", "model_substitution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
+      }
+    },
+    {
+      "id": "e2e-formal-nonacademic-gate",
+      "source_case_id": "eval-042",
+      "prompt": "$agent-academic-squad Help me plan a household move and shopping checklist. Do not use subagents or write files.",
+      "sandbox": "read-only",
+      "expected": {
+        "host_loaded": true, "routing_used": false, "stage": "none", "domain": "none", "handling": "direct",
+        "subagents": {"min": 0, "max": 0},
+        "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"]
       }
     }
   ]

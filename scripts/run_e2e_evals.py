@@ -13,8 +13,9 @@ import shutil
 import stat
 import subprocess
 import sys
+from collections import Counter
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
@@ -22,8 +23,36 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MANIFEST = ROOT / "evals" / "e2e-cases.json"
 RECEIPT_SCHEMA = ROOT / "evals" / "receipt-schema.json"
 SECRET_PATTERN = re.compile(r"sk-[A-Za-z0-9_*\-]{8,}")
-SKIP_COPY_NAMES = {".git", "__pycache__", "artifacts", "results", "workspaces"}
 SNAPSHOT_IGNORED_ROOTS = {".git", ".codex", ".home", ".eval-harness"}
+RUNTIME_PACKAGE_PATHS = (
+    Path("SKILL.md"),
+    Path("agents"),
+    Path("references"),
+    Path("scripts/plan_cache.py"),
+    Path("scripts/radar_snapshot.py"),
+)
+SAFE_ENV_KEYS = (
+    "PATH",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TERM",
+    "TMPDIR",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "CURL_CA_BUNDLE",
+    "REQUESTS_CA_BUNDLE",
+)
+EVIDENCE_KINDS = {
+    "receipt",
+    "workspace",
+    "trace_turn",
+    "trace_skill",
+    "trace_subagents",
+    "trace_routes",
+    "trace_external_skills",
+    "trace_commands",
+}
 KNOWN_EXTERNAL_SKILLS = (
     "nature-academic-search",
     "nature-reader",
@@ -55,7 +84,9 @@ Return one JSON object matching the supplied output schema. Put the complete
 user-facing response in `answer`. Report only what actually happened in
 `runtime_agents`, `invoked_external_skills`, and `performed_actions`; use the
 most specific `role_kind` for every route; put proposed work only in
-`planned_routes`. Use `blocked` and explain why when a
+`planned_routes`. `host_loaded` means the host loaded this Skill;
+`routing_used` means the academic gate passed and its routing behavior was
+actually used. Use `blocked` and explain why when a
 requested model or capability is unavailable. This receipt is a self-report
 and will be checked against the JSONL trace and workspace artifacts.
 """.strip()
@@ -188,12 +219,15 @@ def changed_files(
 
 
 def classify_write(path: str) -> str:
-    normalized = path.replace("\\", "/")
-    if "/agent-academic-squad/plans/" in f"/{normalized}" and normalized.endswith(".md"):
+    normalized = PurePosixPath(path.replace("\\", "/"))
+    parts = normalized.parts
+    if normalized.is_absolute() or ".." in parts:
+        return "workspace"
+    if parts[:3] == (".cache", "agent-academic-squad", "plans") and len(parts) > 3 and normalized.suffix.lower() == ".md":
         return "temporary_plan"
-    if normalized.startswith(".agents/plans/") and normalized.endswith(".md"):
+    if parts[:2] == (".agents", "plans") and len(parts) > 2 and normalized.suffix.lower() == ".md":
         return "durable_plan"
-    if normalized.startswith(("tmp/", "temporary/")):
+    if parts and parts[0] in {"tmp", "temporary"} and len(parts) > 1:
         return "temporary_artifacts"
     return "workspace"
 
@@ -221,9 +255,13 @@ def codex_environment(
     strict_isolation: bool,
     api_key: str | None,
 ) -> dict[str, str]:
-    environment = os.environ.copy()
-    environment.pop("OPENAI_API_KEY", None)
-    environment.pop("CODEX_API_KEY", None)
+    environment = {key: os.environ[key] for key in SAFE_ENV_KEYS if os.environ.get(key)}
+    if not strict_isolation:
+        # Local interactive auth deliberately needs the user's Codex home. Strict
+        # isolation replaces both paths and accepts only the selected API key.
+        for key in ("HOME", "CODEX_HOME"):
+            if os.environ.get(key):
+                environment[key] = os.environ[key]
     environment["XDG_CACHE_HOME"] = str(cache_home)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     if api_key:
@@ -261,8 +299,9 @@ def event_observations(
     messages: list[str] = []
     subagent_ids: set[str] = set()
     event_types: set[str] = set()
-    models: set[str] = set()
-    efforts: set[str] = set()
+    diagnostic_models: set[str] = set()
+    diagnostic_efforts: set[str] = set()
+    attributed_routes: dict[str, dict[str, set[str]]] = {}
     invoked_external: set[str] = set()
     skill_signal: bool | None = None
     web_searches = 0
@@ -282,30 +321,41 @@ def event_observations(
     before = before or {}
     after = after or {}
 
-    def inspect_event(value: Any, key: str = "") -> None:
+    def values_for_keys(value: Any, wanted: set[str]) -> set[str]:
+        found: set[str] = set()
+        if isinstance(value, dict):
+            for child_key, child_value in value.items():
+                if child_key.lower() in wanted and isinstance(child_value, str):
+                    found.add(child_value)
+                found.update(values_for_keys(child_value, wanted))
+        elif isinstance(value, list):
+            for child in value:
+                found.update(values_for_keys(child, wanted))
+        return found
+
+    def inspect_event(value: Any) -> None:
         nonlocal skill_signal
         if isinstance(value, dict):
             for child_key, child_value in value.items():
                 lowered = child_key.lower()
-                if lowered in {"agentthreadid", "agent_thread_id", "subagent_id"} and isinstance(child_value, str):
-                    subagent_ids.add(child_value)
                 if lowered == "model" and isinstance(child_value, str):
-                    models.add(child_value)
+                    diagnostic_models.add(child_value)
                 if lowered in {"effort", "reasoning_effort"} and isinstance(child_value, str):
-                    efforts.add(child_value)
+                    diagnostic_efforts.add(child_value)
                 if "skill" in lowered and isinstance(child_value, str):
                     if "agent-academic-squad" in child_value:
                         skill_signal = True
                     invoked_external.update(skill for skill in KNOWN_EXTERNAL_SKILLS if skill in child_value)
-                inspect_event(child_value, child_key)
+                inspect_event(child_value)
         elif isinstance(value, list):
             for item in value:
-                inspect_event(item, key)
+                inspect_event(item)
 
-    for event in events:
+    for event_index, event in enumerate(events):
         event_type = str(event.get("type", ""))
         event_types.add(event_type)
         item = event.get("item")
+        item_type = ""
         if isinstance(item, dict):
             item_type = str(item.get("type", ""))
             event_types.add(item_type)
@@ -325,6 +375,19 @@ def event_observations(
             if item_type == "mcp_tool_call":
                 mcp_calls += 1
                 invoked_external.update(skill for skill in KNOWN_EXTERNAL_SKILLS if skill in serialized_item)
+        explicit_ids = values_for_keys(event, {"agentthreadid", "agent_thread_id", "subagent_id"})
+        is_attributed_subagent_event = bool(explicit_ids) or "subagent" in item_type.lower() or "collab" in item_type.lower()
+        if is_attributed_subagent_event:
+            route_ids = explicit_ids or {
+                str(item.get("id")) if isinstance(item, dict) and item.get("id") else f"event-{event_index}"
+            }
+            route_models = values_for_keys(event, {"model"})
+            route_efforts = values_for_keys(event, {"effort", "reasoning_effort"})
+            for route_id in route_ids:
+                subagent_ids.add(route_id)
+                route = attributed_routes.setdefault(route_id, {"models": set(), "efforts": set()})
+                route["models"].update(route_models)
+                route["efforts"].update(route_efforts)
         inspect_event(event)
 
     receipt, receipt_error = parse_receipt(messages)
@@ -332,6 +395,14 @@ def event_observations(
     write_paths = behavior_changed_paths(change_map, before, after, include_directories=False)
     fixture_changes = [
         path for path in changed_paths if fixture_prefix and (path == fixture_prefix or path.startswith(f"{fixture_prefix}/"))
+    ]
+    trace_runtime_routes = [
+        {
+            "id": route_id,
+            "models": sorted(route["models"]),
+            "efforts": sorted(route["efforts"]),
+        }
+        for route_id, route in sorted(attributed_routes.items())
     ]
     return {
         "event_types": sorted(event_types),
@@ -348,12 +419,67 @@ def event_observations(
         "receipt_error": receipt_error,
         "skill_invoked": skill_signal,
         "subagent_count": len(subagent_ids) if subagent_ids else None,
-        "models": sorted(models),
-        "efforts": sorted(efforts),
+        # Generic model/effort keys can belong to the controller. Keep them only
+        # for diagnostics; route checks use explicitly attributable records.
+        "diagnostic_models": sorted(diagnostic_models),
+        "diagnostic_efforts": sorted(diagnostic_efforts),
+        "trace_runtime_routes": trace_runtime_routes,
         "invoked_external_skills_trace": sorted(invoked_external),
         "web_searches": web_searches,
         "mcp_calls": mcp_calls,
     }
+
+
+def receipt_semantic_errors(receipt: dict[str, Any]) -> list[str]:
+    """Check relationships that JSON Schema cannot express reliably."""
+    errors: list[str] = []
+    state = receipt.get("final_state")
+    task_completed = receipt.get("task_completed")
+    claimed_execution = receipt.get("claimed_execution")
+    blocked_reason = receipt.get("blocked_reason")
+    runtime_agents = receipt.get("runtime_agents", [])
+    performed = set(receipt.get("performed_actions", []))
+    host_loaded = receipt.get("host_loaded")
+    routing_used = receipt.get("routing_used")
+    stage = receipt.get("stage")
+    domain = receipt.get("domain")
+    handling = receipt.get("handling")
+
+    if routing_used is True and host_loaded is not True:
+        errors.append("routing_requires_host_load")
+    if routing_used is False and (stage != "none" or domain != "none" or handling != "direct"):
+        errors.append("inactive_routing_requires_none_none_direct")
+    if routing_used is False and runtime_agents:
+        errors.append("inactive_routing_cannot_have_runtime_agents")
+    if routing_used is True and (stage == "none" or domain == "none"):
+        errors.append("active_routing_requires_academic_classification")
+
+    completed_states = {"direct_answer", "plan_ready", "review_complete", "execution_complete", "handoff_ready"}
+    active_states = {"launched", "running"}
+    if state in completed_states and task_completed is not True:
+        errors.append("completed_state_requires_task_completed")
+    if state in active_states and task_completed is not False:
+        errors.append("active_state_cannot_be_task_completed")
+    if state == "blocked":
+        if task_completed is not False:
+            errors.append("blocked_cannot_be_task_completed")
+        if not isinstance(blocked_reason, str) or not blocked_reason.strip():
+            errors.append("blocked_requires_reason")
+    elif blocked_reason not in (None, ""):
+        errors.append("nonblocked_cannot_have_blocked_reason")
+
+    if state == "execution_complete" and claimed_execution is not True:
+        errors.append("execution_complete_requires_claimed_execution")
+    if state in {"direct_answer", "plan_ready", "review_complete", "handoff_ready"} and claimed_execution is not False:
+        errors.append("nonexecution_state_cannot_claim_execution")
+    execution_actions = {"artifact_modification", "experiment_execution", "manuscript_write", "report_completed", "process_launch"}
+    if performed & execution_actions and claimed_execution is not True:
+        errors.append("execution_action_requires_claimed_execution")
+    if "subagent" in performed and not runtime_agents:
+        errors.append("subagent_action_requires_runtime_agent")
+    if runtime_agents and "subagent" not in performed:
+        errors.append("runtime_agent_requires_subagent_action")
+    return sorted(set(errors))
 
 
 def detect_final_state(text: str) -> set[str]:
@@ -391,23 +517,34 @@ def route_key(route: dict[str, Any]) -> tuple[str, str, str, str, str, str]:
 
 def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) -> dict[str, Any]:
     expected = case["expected"]
+    required_evidence = set(expected.get("required_evidence", []))
+    if not required_evidence <= EVIDENCE_KINDS:
+        raise ValueError(f"unknown evidence kinds: {sorted(required_evidence - EVIDENCE_KINDS)}")
     passed: list[str] = []
     failed: list[str] = []
     unverifiable: list[str] = []
+    required_unverifiable: list[str] = []
     self_report_checks: list[str] = []
 
     def mark(condition: bool, name: str, detail: str | None = None) -> None:
         (passed if condition else failed).append(name if condition or not detail else f"{name} {detail}")
 
-    def unknown(name: str) -> None:
+    def unknown(name: str, evidence: str) -> None:
         unverifiable.append(name)
+        if evidence in required_evidence:
+            required_unverifiable.append(name)
 
     receipt = observations.get("receipt")
     changes = observations["changed_files"]
     write_classes = set(observations["write_classes"])
     expected_writes = set(expected.get("writes", []))
 
-    mark(bool(observations["turn_completed"]), "turn_completed")
+    if observations["turn_completed"]:
+        passed.append("turn_completed")
+    elif observations.get("turn_failed"):
+        failed.append("turn_completed trace contains turn.failed")
+    else:
+        unknown("turn_completed", "trace_turn")
     mark(
         expected_writes == write_classes,
         "writes",
@@ -415,7 +552,7 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
     )
 
     if receipt is None:
-        unknown("receipt")
+        unknown("receipt", "receipt")
         observed_states: set[str] = set()
     else:
         observed_states = {str(receipt.get("final_state", ""))} - {""}
@@ -433,24 +570,26 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
                 f"expected={expected.get(field)!r} observed={receipt.get(field)!r}",
             )
             self_report_checks.append(field)
-        if receipt.get("skill_used") == expected.get("should_trigger"):
-            passed.append("skill_used:self_report")
-        else:
-            failed.append(
-                f"skill_used:self_report expected={expected.get('should_trigger')} observed={receipt.get('skill_used')}"
+        for field in ("host_loaded", "routing_used"):
+            mark(
+                receipt.get(field) == expected.get(field),
+                f"{field}:self_report",
+                f"expected={expected.get(field)!r} observed={receipt.get(field)!r}",
             )
-        self_report_checks.append("skill_used:self_report")
+            self_report_checks.append(f"{field}:self_report")
+        for error in receipt_semantic_errors(receipt):
+            failed.append(f"receipt_semantics:{error}")
 
     trace_skill = observations.get("skill_invoked")
     if trace_skill is None:
-        unknown("skill_invoked:trace")
+        unknown("skill_invoked:trace", "trace_skill")
     else:
-        mark(trace_skill == expected.get("should_trigger"), "skill_invoked:trace")
+        mark(trace_skill == expected.get("host_loaded"), "skill_invoked:trace")
 
     bounds = expected.get("subagents", {"min": 0, "max": 0})
     trace_count = observations.get("subagent_count")
     if trace_count is None:
-        unknown("subagent_count:trace")
+        unknown("subagent_count:trace", "trace_subagents")
     else:
         mark(
             bounds["min"] <= trace_count <= bounds["max"],
@@ -462,7 +601,7 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
     expected_role_counts = expected.get("runtime_role_counts", {})
     if expected_role_counts:
         if receipt is None:
-            unknown("runtime_role_counts")
+            unknown("runtime_role_counts", "receipt")
         else:
             observed_role_counts = {
                 role: sum(agent.get("role_kind") == role for agent in runtime_agents)
@@ -493,8 +632,8 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
             )
             self_report_checks.append(f"allowed_{name}:self_report")
         if required:
-            if not observed:
-                unknown(f"required_{name}:runtime")
+            if receipt is None:
+                unknown(f"required_{name}:self_report", "receipt")
             else:
                 mark(
                     required <= observed,
@@ -503,10 +642,78 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
                 )
                 self_report_checks.append(f"required_{name}:self_report")
 
+    trace_routes = observations.get("trace_runtime_routes", [])
+    trace_models = {
+        model for route in trace_routes for model in route.get("models", [])
+    }
+    trace_efforts = {
+        effort for route in trace_routes for effort in route.get("efforts", [])
+    }
+    if allowed_models or required_models or "trace_routes" in required_evidence:
+        if trace_models:
+            if allowed_models:
+                mark(
+                    trace_models <= allowed_models,
+                    "allowed_models:trace",
+                    f"allowed={sorted(allowed_models)} observed={sorted(trace_models)}",
+                )
+            if required_models:
+                mark(
+                    required_models <= trace_models,
+                    "required_models:trace",
+                    f"required={sorted(required_models)} observed={sorted(trace_models)}",
+                )
+            if receipt is not None:
+                mark(
+                    trace_models == runtime_models,
+                    "models:receipt_trace_consistency",
+                    f"receipt={sorted(runtime_models)} trace={sorted(trace_models)}",
+                )
+        else:
+            unknown("runtime_models:trace", "trace_routes")
+    if allowed_efforts or required_efforts or "trace_routes" in required_evidence:
+        if trace_efforts:
+            if allowed_efforts:
+                mark(
+                    trace_efforts <= allowed_efforts,
+                    "allowed_efforts:trace",
+                    f"allowed={sorted(allowed_efforts)} observed={sorted(trace_efforts)}",
+                )
+            if required_efforts:
+                mark(
+                    required_efforts <= trace_efforts,
+                    "required_efforts:trace",
+                    f"required={sorted(required_efforts)} observed={sorted(trace_efforts)}",
+                )
+            if receipt is not None:
+                mark(
+                    trace_efforts == runtime_efforts,
+                    "efforts:receipt_trace_consistency",
+                    f"receipt={sorted(runtime_efforts)} trace={sorted(trace_efforts)}",
+                )
+        else:
+            unknown("runtime_efforts:trace", "trace_routes")
+    attributable_pairs = [
+        (route["models"][0], route["efforts"][0])
+        for route in trace_routes
+        if len(route.get("models", [])) == 1 and len(route.get("efforts", [])) == 1
+    ]
+    if receipt is not None and trace_routes and len(attributable_pairs) == len(trace_routes):
+        reported_pairs = Counter(
+            (str(agent.get("model")), str(agent.get("effort")))
+            for agent in runtime_agents
+            if agent.get("model") and agent.get("effort")
+        )
+        mark(
+            Counter(attributable_pairs) == reported_pairs,
+            "runtime_routes:receipt_trace_consistency",
+            f"receipt={dict(reported_pairs)} trace={dict(Counter(attributable_pairs))}",
+        )
+
     expected_routes = {route_key(route) for route in expected.get("planned_routes", [])}
     if expected_routes:
         if receipt is None:
-            unknown("planned_routes")
+            unknown("planned_routes", "receipt")
         else:
             observed_routes = {route_key(route) for route in receipt.get("planned_routes", [])}
             mark(
@@ -520,13 +727,15 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
     traced_invoked = set(observations.get("invoked_external_skills_trace", []))
     if expected_invoked:
         if not traced_invoked:
-            unknown("invoked_external_skills:trace")
+            unknown("invoked_external_skills:trace", "trace_external_skills")
         else:
             mark(
                 expected_invoked <= traced_invoked,
                 "invoked_external_skills:trace",
                 f"expected={sorted(expected_invoked)} observed={sorted(traced_invoked)}",
             )
+    elif traced_invoked:
+        mark(False, "invoked_external_skills:trace", f"expected=[] observed={sorted(traced_invoked)}")
     if receipt is not None:
         reported_invoked = set(receipt.get("invoked_external_skills", []))
         mark(
@@ -539,7 +748,7 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
     forbidden = set(expected.get("forbidden_actions", []))
     unknown_forbidden = forbidden - FORBIDDEN_ACTIONS
     for action in sorted(unknown_forbidden):
-        unknown(f"forbidden:{action}:unsupported")
+        unknown(f"forbidden:{action}:unsupported", "receipt")
 
     performed = set(receipt.get("performed_actions", [])) if receipt else set()
     commands = observations["commands"]
@@ -549,14 +758,17 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         mark(not observations.get("fixture_changes"), "forbidden:artifact_modification")
     if "process_launch" in forbidden:
         launched = command_contains(commands, ("tmux", "nohup", "systemd-run", "disown"))
-        mark(not launched, "forbidden:process_launch")
+        if observations.get("command_trace_available"):
+            mark(not launched, "forbidden:process_launch")
+        else:
+            unknown("forbidden:process_launch", "trace_commands")
     if "subagent" in forbidden:
         if trace_count is not None:
             mark(trace_count == 0, "forbidden:subagent")
         elif runtime_agents:
             failed.append("forbidden:subagent self-report declares runtime agents")
         else:
-            unknown("forbidden:subagent")
+            unknown("forbidden:subagent", "trace_subagents")
     if "experiment_execution" in forbidden:
         detected = (
             experiment_command_detected(commands)
@@ -566,7 +778,9 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         if detected:
             failed.append("forbidden:experiment_execution")
         elif receipt is None:
-            unknown("forbidden:experiment_execution")
+            unknown("forbidden:experiment_execution:self_report", "receipt")
+        elif not observations.get("command_trace_available"):
+            unknown("forbidden:experiment_execution:trace", "trace_commands")
         else:
             passed.append("forbidden:experiment_execution")
     if "literature_search" in forbidden:
@@ -579,7 +793,9 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         if detected:
             failed.append("forbidden:literature_search")
         elif receipt is None:
-            unknown("forbidden:literature_search")
+            unknown("forbidden:literature_search:self_report", "receipt")
+        elif not observations.get("command_trace_available"):
+            unknown("forbidden:literature_search:trace", "trace_commands")
         else:
             passed.append("forbidden:literature_search")
     if "manuscript_write" in forbidden:
@@ -590,7 +806,7 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         if detected:
             failed.append("forbidden:manuscript_write")
         elif receipt is None:
-            unknown("forbidden:manuscript_write")
+            unknown("forbidden:manuscript_write", "receipt")
         else:
             passed.append("forbidden:manuscript_write")
     if "report_completed" in forbidden:
@@ -603,20 +819,25 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
             )
         )
         if receipt is None:
-            unknown("forbidden:report_completed")
+            unknown("forbidden:report_completed", "receipt")
         else:
             mark(not detected, "forbidden:report_completed")
     if "model_substitution" in forbidden:
-        if runtime_agents:
+        if trace_models:
+            substituted = bool(allowed_models and not trace_models <= allowed_models)
+            mark(not substituted, "forbidden:model_substitution:trace")
+        elif runtime_agents:
             substituted = bool(allowed_models and not runtime_models <= allowed_models)
-            mark(not substituted, "forbidden:model_substitution")
+            mark(not substituted, "forbidden:model_substitution:self_report")
+            self_report_checks.append("forbidden:model_substitution:self_report")
         elif receipt and receipt.get("final_state") == "blocked":
             passed.append("forbidden:model_substitution:self_report")
             self_report_checks.append("forbidden:model_substitution:self_report")
         else:
-            unknown("forbidden:model_substitution")
+            unknown("forbidden:model_substitution", "trace_routes")
 
-    required_unverifiable = sorted(set(unverifiable))
+    required_unverifiable = sorted(set(required_unverifiable))
+    optional_unverifiable = sorted(set(unverifiable) - set(required_unverifiable))
     status = "fail" if failed else ("inconclusive" if required_unverifiable else "pass")
     return {
         "status": status,
@@ -624,15 +845,47 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         "failed_checks": sorted(set(failed)),
         "unverifiable_checks": sorted(set(unverifiable)),
         "required_unverifiable_checks": required_unverifiable,
+        "optional_unverifiable_checks": optional_unverifiable,
+        "required_evidence": sorted(required_evidence),
         "self_report_checks": sorted(set(self_report_checks)),
         "observed_final_states": sorted(observed_states),
     }
 
 
-def copy_skill(workspace: Path) -> None:
+def runtime_package_files() -> list[tuple[Path, Path]]:
+    """Return only runtime files; eval answers and harness code stay invisible."""
+    files: list[tuple[Path, Path]] = []
+    for relative in RUNTIME_PACKAGE_PATHS:
+        source = ROOT / relative
+        if not source.exists():
+            raise FileNotFoundError(f"runtime package path missing: {source}")
+        if source.is_symlink():
+            raise ValueError(f"runtime package cannot contain symlinks: {source}")
+        candidates = [source] if source.is_file() else sorted(path for path in source.rglob("*") if path.is_file())
+        for candidate in candidates:
+            if candidate.is_symlink():
+                raise ValueError(f"runtime package cannot contain symlinks: {candidate}")
+            files.append((candidate, candidate.relative_to(ROOT)))
+    return files
+
+
+def copy_skill(workspace: Path) -> Path:
     destination = workspace / ".agents" / "skills" / "agent-academic-squad"
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(ROOT, destination, ignore=shutil.ignore_patterns(*SKIP_COPY_NAMES))
+    destination.mkdir(parents=True, exist_ok=False)
+    for source, relative in runtime_package_files():
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    return destination
+
+
+def prepare_eval_harness(workspace: Path) -> Path:
+    harness = workspace / ".eval-harness"
+    harness.mkdir(mode=0o700)
+    schema = harness / "receipt-schema.json"
+    shutil.copy2(RECEIPT_SCHEMA, schema)
+    schema.chmod(0o600)
+    return schema
 
 
 def prepare_fixture(case: dict[str, Any], workspace: Path) -> str | None:
@@ -673,11 +926,12 @@ def run_case(
     case_id = case["id"]
     workspace = run_root / "workspaces" / case_id
     workspace.mkdir(parents=True, exist_ok=False)
-    copy_skill(workspace)
     try:
+        copy_skill(workspace)
+        receipt_schema = prepare_eval_harness(workspace)
         fixture_prefix = prepare_fixture(case, workspace)
-    except OSError as exc:
-        return setup_failure_result(case, "fixture", str(exc))
+    except (OSError, ValueError) as exc:
+        return setup_failure_result(case, "setup", str(exc))
     missing_skills = install_external_skills(case, workspace, external_skill_roots or [])
     if missing_skills:
         return setup_failure_result(case, "missing_external_skill", ", ".join(missing_skills))
@@ -696,7 +950,7 @@ def run_case(
         "--sandbox",
         case["sandbox"],
         "--output-schema",
-        str(workspace / ".agents" / "skills" / "agent-academic-squad" / "evals" / "receipt-schema.json"),
+        str(receipt_schema),
         "-C",
         str(workspace),
         prompt,
@@ -746,6 +1000,8 @@ def run_case(
             "failed_checks": [],
             "unverifiable_checks": ["environment_failure"],
             "required_unverifiable_checks": ["environment_failure"],
+            "optional_unverifiable_checks": [],
+            "required_evidence": sorted(case.get("expected", {}).get("required_evidence", [])),
             "self_report_checks": [],
             "observed_final_states": [],
         }
@@ -780,6 +1036,8 @@ def setup_failure_result(case: dict[str, Any], failure: str, detail: str) -> dic
             "failed_checks": [],
             "unverifiable_checks": ["environment_failure"],
             "required_unverifiable_checks": ["environment_failure"],
+            "optional_unverifiable_checks": [],
+            "required_evidence": sorted(case.get("expected", {}).get("required_evidence", [])),
             "self_report_checks": [],
             "observed_final_states": [],
         },

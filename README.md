@@ -73,6 +73,8 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 
 `scripts/plan_cache.py` performs lazy cleanup when allocating a new path. It deletes only ordinary files older than 30 days that match its own naming convention. It does not use `/tmp`, follow symlinks, or delete outside its managed cache root. A permanent plan without a user-supplied path is stored under `.agents/plans/` in the current workspace.
 
+Automatic persistence never stores raw credentials, tokens, private keys, or full conversation transcripts by default. User-marked sensitive, confidential, or `do not store` material stays in chat unless the user supplies an authorized destination.
+
 Every saved substantial plan contains these sections:
 
 1. Conclusion summary
@@ -130,7 +132,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 41 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 15 core cases for planned versus runtime routes, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
+`evals/trigger-routing.csv` contains 47 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 16 core cases for planned versus runtime routes, host loading versus academic routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
@@ -150,11 +152,11 @@ python3 scripts/run_e2e_evals.py \
   --case e2e-four-directory-read-only-review
 ```
 
-The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces, structured receipts, and summaries under `evals/results/`. Its workspace snapshots compare the full path union and detect creation, modification, deletion, type changes, mode changes, and symlink-target changes—including changes inside the copied Skill. The four-directory review uses real fixture files rather than embedding all evidence in the prompt.
+The runner builds a blind runtime package containing only `SKILL.md`, UI metadata, runtime references, and the plan-cache/Radar helpers. The tested model cannot read repository README files, eval cases or expectations, tests, workflows, or the runner. The receipt schema is mounted separately under `.eval-harness/`. The runner uses `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces, structured receipts, and summaries under `evals/results/`. Its workspace snapshots compare the full path union and detect creation, modification, deletion, type changes, mode changes, and symlink-target changes—including changes inside the copied Skill. The four-directory review uses real fixture files rather than embedding all evidence in the prompt.
 
-Results are `pass`, `fail`, or `inconclusive`. Required evidence that the current JSONL surface does not expose can never become a pass. The structured receipt describes the model's claimed stage, routes, agents, actions, and final state, but is explicitly self-report: it is checked alongside JSONL events, commands, and workspace changes and cannot alone prove task completion. Use `--strict` to make either `fail` or `inconclusive` return nonzero. Every summary records the runner commit and hash, manifest hash, and platform.
+Results are `pass`, `fail`, or `inconclusive`. Each case declares its required evidence sources. Missing optional trace data is reported without poisoning an otherwise correct behavioral case; missing required evidence remains `inconclusive`. The structured receipt describes the model's claimed stage, routes, agents, actions, and final state, but is explicitly self-report and is checked for cross-field consistency. Generic JSONL model fields are diagnostic only; model/effort checks become trace-backed only when a record is explicitly attributable to a subagent. Use `--strict` to make either `fail` or `inconclusive` return nonzero. Every summary records the runner commit and hash, manifest hash, and platform.
 
-Add `--strict-isolation` when `CODEX_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. The runner removes ambient OpenAI key variables and passes only `CODEX_API_KEY` to each `codex exec` subprocess. Authentication, network, missing external skills, and timeout failures are reported separately from Skill behavior.
+Add `--strict-isolation` when `CODEX_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. The runner constructs subprocess environments from a small positive allowlist and passes only the selected `CODEX_API_KEY`; unrelated ambient credentials and tokens are not inherited. Authentication, network, missing external skills, and timeout failures are reported separately from Skill behavior.
 
 Run the optional Nature integration suite only when the external skills are installed:
 
@@ -165,7 +167,7 @@ python3 scripts/run_e2e_evals.py \
   --strict
 ```
 
-`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 15 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 16 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 
@@ -179,7 +181,7 @@ As a best-effort natural-language shortcut, start the message with `小分队` (
 这个交给小分队，只规划，不执行。
 ```
 
-Natural-language negations such as `不用小分队` or `不要交给小分队`, and sentences that merely discuss the name, do not trigger the shortcut. By contrast, `$agent-academic-squad` is host-level formal invocation wherever it appears; do not include it in a negation and expect a bypass. The formal syntax is:
+Natural-language negations such as `不用小分队` or `不要交给小分队`, and sentences that merely discuss the name, do not trigger the shortcut. `$agent-academic-squad` asks the host to load the Skill, but it does not bypass the academic gate, safety, or the user's actual instruction. A nonacademic request, a quoted/code-formatted mention, or a clear no-delegation instruction receives only the lightweight routing pass and no subagent. The formal syntax for an actual academic task is:
 
 ```text
 $agent-academic-squad Plan this cross-module experiment first. Do not execute it. Include expected cost and model assignments.

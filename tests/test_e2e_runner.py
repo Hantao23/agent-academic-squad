@@ -22,7 +22,8 @@ def receipt(**overrides: object) -> dict[str, object]:
         "final_state": "review_complete",
         "task_completed": True,
         "claimed_execution": False,
-        "skill_used": True,
+        "host_loaded": True,
+        "routing_used": True,
         "stage": "review",
         "domain": "code_experiment",
         "handling": "subagent",
@@ -43,7 +44,8 @@ def receipt(**overrides: object) -> dict[str, object]:
 
 def case_expected(**overrides: object) -> dict[str, object]:
     value: dict[str, object] = {
-        "should_trigger": True,
+        "host_loaded": True,
+        "routing_used": True,
         "stage": "review",
         "domain": "code_experiment",
         "handling": "subagent",
@@ -58,6 +60,7 @@ def case_expected(**overrides: object) -> dict[str, object]:
         "writes": [],
         "final_states": ["review_complete"],
         "forbidden_actions": ["file_write"],
+        "required_evidence": ["receipt", "workspace", "trace_turn"],
     }
     value.update(overrides)
     return {"id": "test", "expected": value}
@@ -73,6 +76,8 @@ def observations(receipt_value: dict[str, object] | None, **overrides: object) -
         "skill_invoked": None,
         "subagent_count": None,
         "commands": [],
+        "command_trace_available": True,
+        "trace_runtime_routes": [],
         "invoked_external_skills_trace": [],
         "web_searches": 0,
         "mcp_calls": 0,
@@ -104,11 +109,52 @@ class E2ERunnerTests(unittest.TestCase):
             {"blocked"},
         )
 
-    def test_missing_trace_signals_make_result_inconclusive(self) -> None:
+    def test_optional_missing_trace_signals_do_not_poison_a_behavioral_case(self) -> None:
         result = run_e2e_evals.evaluate_observations(case_expected(), observations(receipt()))
+        self.assertEqual(result["status"], "pass")
+        self.assertIn("skill_invoked:trace", result["optional_unverifiable_checks"])
+        self.assertIn("subagent_count:trace", result["optional_unverifiable_checks"])
+        self.assertEqual(result["required_unverifiable_checks"], [])
+
+    def test_case_contract_can_require_subagent_and_route_trace(self) -> None:
+        expected = case_expected(
+            required_evidence=["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
+        )
+        result = run_e2e_evals.evaluate_observations(expected, observations(receipt()))
         self.assertEqual(result["status"], "inconclusive")
-        self.assertIn("skill_invoked:trace", result["required_unverifiable_checks"])
         self.assertIn("subagent_count:trace", result["required_unverifiable_checks"])
+        self.assertIn("runtime_models:trace", result["required_unverifiable_checks"])
+
+    def test_optional_subagent_trace_still_fails_on_explicit_contradiction(self) -> None:
+        direct_receipt = receipt(
+            final_state="direct_answer",
+            host_loaded=False,
+            routing_used=False,
+            stage="none",
+            domain="none",
+            handling="direct",
+            runtime_agents=[],
+            performed_actions=[],
+        )
+        direct_case = case_expected(
+            host_loaded=False,
+            routing_used=False,
+            stage="none",
+            domain="none",
+            handling="direct",
+            subagents={"min": 0, "max": 0},
+            allowed_models=[],
+            required_models=[],
+            allowed_efforts=[],
+            forbidden_actions=["file_write", "subagent"],
+            final_states=["direct_answer"],
+        )
+        result = run_e2e_evals.evaluate_observations(
+            direct_case,
+            observations(direct_receipt, skill_invoked=False, subagent_count=1),
+        )
+        self.assertEqual(result["status"], "fail")
+        self.assertTrue(any("subagent_count:trace" in item for item in result["failed_checks"]))
 
     def test_allowed_effort_means_any_observed_effort_may_be_allowed(self) -> None:
         result = run_e2e_evals.evaluate_observations(
@@ -216,6 +262,11 @@ class E2ERunnerTests(unittest.TestCase):
         self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/plans/a.md"), "temporary_plan")
         self.assertEqual(run_e2e_evals.classify_write(".agents/plans/a.md"), "durable_plan")
         self.assertEqual(run_e2e_evals.classify_write("temporary/a.json"), "temporary_artifacts")
+        self.assertEqual(
+            run_e2e_evals.classify_write("wrong/agent-academic-squad/plans/fake.md"),
+            "workspace",
+        )
+        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/plans/../fake.md"), "workspace")
 
     def test_strict_mode_rejects_inconclusive(self) -> None:
         self.assertEqual(run_e2e_evals.outcome_exit_code(0, 0, 1, strict=False), 0)
@@ -240,11 +291,95 @@ class E2ERunnerTests(unittest.TestCase):
             workspace = Path(temporary)
             cache_home = workspace / ".cache"
             cache_home.mkdir()
-            with patch.dict(os.environ, {"OPENAI_API_KEY": "wrong-openai-key", "CODEX_API_KEY": "wrong-codex-key"}):
+            with patch.dict(os.environ, {
+                "OPENAI_API_KEY": "wrong-openai-key",
+                "CODEX_API_KEY": "wrong-codex-key",
+                "AWS_SECRET_ACCESS_KEY": "ambient-secret",
+                "SOME_PRIVATE_TOKEN": "ambient-token",
+            }):
                 environment = run_e2e_evals.codex_environment(cache_home, workspace, True, "selected-key")
         self.assertNotIn("OPENAI_API_KEY", environment)
+        self.assertNotIn("AWS_SECRET_ACCESS_KEY", environment)
+        self.assertNotIn("SOME_PRIVATE_TOKEN", environment)
         self.assertEqual(environment["CODEX_API_KEY"], "selected-key")
         self.assertEqual(environment["HOME"], str(workspace / ".home"))
+
+    def test_runtime_package_is_blind_to_eval_answers_and_harness_code(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            destination = run_e2e_evals.copy_skill(workspace)
+            schema = run_e2e_evals.prepare_eval_harness(workspace)
+            copied = {str(path.relative_to(destination)) for path in destination.rglob("*") if path.is_file()}
+            schema_exists = schema.is_file()
+            runtime_eval_dir_exists = (destination / "evals").exists()
+        self.assertIn("SKILL.md", copied)
+        self.assertIn("references/routing.md", copied)
+        self.assertIn("scripts/plan_cache.py", copied)
+        self.assertNotIn("evals/e2e-cases.json", copied)
+        self.assertNotIn("evals/receipt-schema.json", copied)
+        self.assertNotIn("scripts/run_e2e_evals.py", copied)
+        self.assertNotIn("README.md", copied)
+        self.assertTrue(schema_exists)
+        self.assertFalse(runtime_eval_dir_exists)
+        self.assertEqual(schema.parent.name, ".eval-harness")
+
+    def test_receipt_semantics_reject_contradictory_completion_claims(self) -> None:
+        broken = receipt(
+            final_state="blocked",
+            task_completed=True,
+            claimed_execution=False,
+            blocked_reason=None,
+        )
+        errors = run_e2e_evals.receipt_semantic_errors(broken)
+        self.assertIn("blocked_cannot_be_task_completed", errors)
+        self.assertIn("blocked_requires_reason", errors)
+        execution_errors = run_e2e_evals.receipt_semantic_errors(
+            receipt(
+                final_state="execution_complete",
+                task_completed=True,
+                claimed_execution=False,
+                blocked_reason=None,
+            )
+        )
+        self.assertIn("execution_complete_requires_claimed_execution", execution_errors)
+
+    def test_formal_host_load_does_not_imply_academic_routing(self) -> None:
+        direct_receipt = receipt(
+            final_state="direct_answer",
+            host_loaded=True,
+            routing_used=False,
+            stage="none",
+            domain="none",
+            handling="direct",
+            runtime_agents=[],
+            performed_actions=[],
+        )
+        self.assertEqual(run_e2e_evals.receipt_semantic_errors(direct_receipt), [])
+
+    def test_attributable_trace_must_match_receipt_route(self) -> None:
+        trace = "\n".join((
+            json.dumps({
+                "type": "item.completed",
+                "item": {
+                    "id": "agent-1",
+                    "type": "collab_tool_call",
+                    "subagent_id": "agent-1",
+                    "model": "gpt-5.6-terra",
+                    "reasoning_effort": "max",
+                },
+            }),
+            json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(receipt())}}),
+            '{"type":"turn.completed"}',
+        ))
+        events, _ = run_e2e_evals.parse_jsonl(trace)
+        observed = run_e2e_evals.event_observations(events, [])
+        result = run_e2e_evals.evaluate_observations(
+            case_expected(required_evidence=["receipt", "workspace", "trace_turn", "trace_routes"]),
+            observed,
+        )
+        self.assertEqual(observed["trace_runtime_routes"][0]["models"], ["gpt-5.6-terra"])
+        self.assertEqual(result["status"], "fail")
+        self.assertTrue(any("models:receipt_trace_consistency" in item for item in result["failed_checks"]))
 
     def test_provenance_records_reproducibility_fields(self) -> None:
         data = run_e2e_evals.provenance(ROOT / "evals" / "e2e-cases.json")

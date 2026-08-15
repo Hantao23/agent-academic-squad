@@ -8,12 +8,13 @@
       "prompt": "Use the installed nature-academic-search skill to find and deduplicate recent DNA-storage clustering papers, then return a traceable short table.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "execute", "domain": "paper", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "execute", "domain": "paper", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-luna"], "required_models": ["gpt-5.6-luna"],
         "allowed_efforts": ["max"], "required_efforts": ["max"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": ["nature-academic-search"], "writes": [],
-        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"]
+        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes", "trace_external_skills"]
       }
     },
     {
@@ -24,12 +25,13 @@
       "prompt": "Use the installed nature-reader skill to read fixtures/mini-paper/paper.md and return a source-grounded Chinese-English reader. Do not modify the source.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true, "stage": "execute", "domain": "paper", "handling": "subagent",
+        "host_loaded": true, "routing_used": true, "stage": "execute", "domain": "paper", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
         "allowed_models": ["gpt-5.6-terra"], "required_models": ["gpt-5.6-terra"],
         "allowed_efforts": ["max"], "required_efforts": ["max"],
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": ["nature-reader"], "writes": [],
-        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"]
+        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes", "trace_external_skills"]
       }
     }
   ]

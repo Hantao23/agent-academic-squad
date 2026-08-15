@@ -73,6 +73,8 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 
 `scripts/plan_cache.py` 在分配新路径时执行惰性清理，只删除该目录中符合自身命名规则、超过 30 天的普通文件；它不使用 `/tmp`、不跟随符号链接，也不删除缓存根目录之外的内容。用户未指定路径的永久计划保存到当前工作区的 `.agents/plans/`。
 
+自动保存不会写入原始凭据、访问令牌、私钥，也不会默认复制完整对话。用户标记为敏感、机密或“不要存储”的材料只在聊天中返回；除非用户另行给出获授权的保存位置。
+
 规划文件固定包含以下章节：
 
 1. 结论摘要
@@ -130,7 +132,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供41条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供15条核心富 E2E，覆盖规划路由与实际代理、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖和临时产物。独立的两条 `evals/nature-integration-cases.json` 用于验证真实 Nature Skill 调用，不让普通 E2E 依赖外部 Skill 安装。
+`evals/trigger-routing.csv` 提供47条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供16条核心富 E2E，覆盖宿主加载与学术路由分离、规划路由与实际代理、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖和临时产物。独立的两条 `evals/nature-integration-cases.json` 用于验证真实 Nature Skill 调用，不让普通 E2E 依赖外部 Skill 安装。
 
 其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
 
@@ -150,11 +152,11 @@ python3 scripts/run_e2e_evals.py \
   --case e2e-four-directory-read-only-review
 ```
 
-runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把 trace、结构化 receipt 和汇总保存到已忽略的 `evals/results/`。工作区快照会比较前后路径全集，检测新增、修改、删除、类型变化、权限变化和符号链接目标变化，也不会排除被复制的 Skill。四目录审查使用真正的目录和文件 fixture，不再把全部证据塞进 prompt。
+runner 只把 `SKILL.md`、UI 元数据、运行时参考以及计划缓存/Radar 辅助脚本组成盲测运行包；被测模型看不到仓库 README、评测题与期望答案、测试、workflow 或 runner。receipt schema 由外部 `.eval-harness/` 单独挂载。runner 使用 `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把 trace、结构化 receipt 和汇总保存到已忽略的 `evals/results/`。工作区快照会比较前后路径全集，检测新增、修改、删除、类型变化、权限变化和符号链接目标变化，也不会排除被复制的 Skill。四目录审查使用真正的目录和文件 fixture，不再把全部证据塞进 prompt。
 
-评测结果分为 `pass`、`fail` 和 `inconclusive`。任何必需但无法观测的证据都不能被算成通过。结构化 receipt 记录模型自述的阶段、路由、代理、动作和最终状态，但它只是辅助证据；runner 会同时检查 JSONL 事件、命令和工作区变化，不能仅凭模型自述证明任务完成。增加 `--strict` 后，`fail` 和 `inconclusive` 都会返回非零。每份汇总还会记录 runner 提交与哈希、manifest 哈希和平台。
+评测结果分为 `pass`、`fail` 和 `inconclusive`，每条案例会显式声明必需的证据来源。缺少可选 trace 会被记录，但不会让正确的普通行为案例失效；缺少必需证据仍为 `inconclusive`。结构化 receipt 只是模型自述，runner 还会检查其字段间语义是否自洽。JSONL 中无法归属的通用 model/effort 字段只作诊断；只有明确归属于子代理的记录才用于强路由核验。增加 `--strict` 后，`fail` 和 `inconclusive` 都会返回非零。每份汇总还会记录 runner 提交与哈希、manifest 哈希和平台。
 
-有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 会移除环境中原有的 OpenAI 密钥变量，只把 `CODEX_API_KEY` 传给每个 `codex exec` 子进程。认证、网络、外部 Skill 缺失和超时会与 Skill 行为失败分开报告。
+有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 通过小型正向白名单构造子进程环境，只传入选定的 `CODEX_API_KEY`；无关的环境凭据和令牌不会被继承。认证、网络、外部 Skill 缺失和超时会与 Skill 行为失败分开报告。
 
 只有安装了外部 Nature Skills 时才运行可选集成集：
 
@@ -165,7 +167,7 @@ python3 scripts/run_e2e_evals.py \
   --strict
 ```
 
-`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。维护者可选择3条代表案例或全部15条核心案例，脱敏产物保留14天。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。数据集校验和 dry-run 不会冒充真实模型评测。
+`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。维护者可选择3条代表案例或全部16条核心案例，脱敏产物保留14天。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。数据集校验和 dry-run 不会冒充真实模型评测。
 
 ## 使用示例
 
@@ -179,7 +181,7 @@ python3 scripts/run_e2e_evals.py \
 这个交给小分队，只规划，不执行。
 ```
 
-`不用小分队`、`不要交给小分队` 等自然语言否定，以及仅仅讨论“小分队”的句子，不会触发快捷词。`$agent-academic-squad` 则是宿主级正式调用语法，只要写出就应按正式调用处理；不要把它写进否定句后再期待绕过。正式 Skill 语法是：
+`不用小分队`、`不要交给小分队` 等自然语言否定，以及仅仅讨论“小分队”的句子，不会触发快捷词。`$agent-academic-squad` 会请求宿主加载 Skill，但不会绕过学术门槛、安全边界或用户的真实指令。非学术请求、引号或代码中的字面提及、以及明确要求不委派的语句只做轻量分诊，不创建子代理。真正学术任务的正式语法是：
 
 ```text
 $agent-academic-squad 先规划这个跨模块实验，不要执行，给出预计成本和模型分配。

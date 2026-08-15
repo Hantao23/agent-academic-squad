@@ -20,7 +20,7 @@ E2E_MANIFESTS = (
 )
 RECEIPT_SCHEMA = ROOT / "evals" / "receipt-schema.json"
 REQUIRED_COLUMNS = {
-    "id", "category", "should_trigger", "expected_stage", "expected_domain",
+    "id", "category", "expected_host_loaded", "expected_routing_used", "expected_stage", "expected_domain",
     "expected_handling", "expected_external_skill", "constraints", "prompt",
 }
 ALLOWED_CATEGORIES = {"formal", "shortcut", "implicit", "contextual", "negative", "boundary"}
@@ -32,7 +32,8 @@ ALLOWED_CONSTRAINTS = {
     "none", "read_only", "plan_only", "respect_model_override", "no_file_write",
     "direct_execution", "temporary_plan", "durable_plan", "long_running",
     "temporary_artifacts", "workspace_read_only", "unavailable_model",
-    "single_writer", "no_plan_save",
+    "single_writer", "no_plan_save", "academic_gate", "formal_literal_context",
+    "formal_opt_out", "sensitive_no_store",
 }
 NEGATED_SHORTCUT_PHRASES = (
     "不用小分队", "不要用小分队", "别用小分队", "不要使用小分队",
@@ -40,10 +41,10 @@ NEGATED_SHORTCUT_PHRASES = (
 )
 DISCUSSION_ONLY_PHRASES = ("讨论小分队", "关于小分队", "小分队这个名字", "小分队这个称呼")
 E2E_EXPECTED_FIELDS = {
-    "should_trigger", "stage", "domain", "handling", "subagents",
+    "host_loaded", "routing_used", "stage", "domain", "handling", "subagents",
     "allowed_models", "required_models", "allowed_efforts", "required_efforts",
     "runtime_role_counts", "planned_routes", "invoked_external_skills", "writes", "final_states",
-    "forbidden_actions",
+    "forbidden_actions", "required_evidence",
 }
 E2E_CASE_FIELDS = {
     "id", "source_case_id", "prompt", "sandbox", "expected", "fixture",
@@ -60,6 +61,10 @@ ALLOWED_FORBIDDEN_ACTIONS = {
     "file_write", "subagent", "artifact_modification", "experiment_execution",
     "literature_search", "manuscript_write", "report_completed", "process_launch",
     "model_substitution",
+}
+ALLOWED_EVIDENCE = {
+    "receipt", "workspace", "trace_turn", "trace_skill", "trace_subagents",
+    "trace_routes", "trace_external_skills", "trace_commands",
 }
 ROUTE_FIELDS = {"stage", "role", "role_kind", "model", "effort", "external_skill"}
 ALLOWED_ROLE_KINDS = {"planner", "executor", "reviewer", "searcher", "reader", "writer", "analyst"}
@@ -155,8 +160,10 @@ def validate_e2e_manifest(path: Path, source_case_ids: set[str]) -> int:
         expected = case["expected"]
         if not isinstance(expected, dict) or set(expected) != E2E_EXPECTED_FIELDS:
             fail(f"{prefix}: unexpected expected fields")
-        if not isinstance(expected["should_trigger"], bool):
-            fail(f"{prefix}: should_trigger must be boolean")
+        if not isinstance(expected["host_loaded"], bool) or not isinstance(expected["routing_used"], bool):
+            fail(f"{prefix}: host_loaded and routing_used must be boolean")
+        if expected["routing_used"] and not expected["host_loaded"]:
+            fail(f"{prefix}: routing_used requires host_loaded")
         if expected["stage"] not in ALLOWED_STAGES or expected["domain"] not in ALLOWED_DOMAINS:
             fail(f"{prefix}: invalid stage or domain")
         if expected["handling"] not in ALLOWED_HANDLING:
@@ -169,6 +176,7 @@ def validate_e2e_manifest(path: Path, source_case_ids: set[str]) -> int:
         writes = require_string_list(expected["writes"], f"{prefix}.writes")
         final_states = require_string_list(expected["final_states"], f"{prefix}.final_states")
         forbidden = require_string_list(expected["forbidden_actions"], f"{prefix}.forbidden_actions")
+        required_evidence = require_string_list(expected["required_evidence"], f"{prefix}.required_evidence")
         if not set(required_models) <= set(allowed_models):
             fail(f"{prefix}: required_models must be a subset of allowed_models")
         if not set(allowed_efforts) <= ALLOWED_EFFORTS or not set(required_efforts) <= set(allowed_efforts):
@@ -177,6 +185,10 @@ def validate_e2e_manifest(path: Path, source_case_ids: set[str]) -> int:
             fail(f"{prefix}: invalid writes or final state")
         if not set(forbidden) <= ALLOWED_FORBIDDEN_ACTIONS:
             fail(f"{prefix}: invalid forbidden action")
+        if not set(required_evidence) <= ALLOWED_EVIDENCE:
+            fail(f"{prefix}: invalid required evidence")
+        if not {"receipt", "workspace", "trace_turn"} <= set(required_evidence):
+            fail(f"{prefix}: receipt, workspace, and trace_turn evidence are required")
         routes = expected["planned_routes"]
         if not isinstance(routes, list):
             fail(f"{prefix}: planned_routes must be a list")
@@ -195,7 +207,7 @@ def validate_e2e_manifest(path: Path, source_case_ids: set[str]) -> int:
         minimum_agents, maximum_agents = subagents["min"], subagents["max"]
         if not isinstance(minimum_agents, int) or not isinstance(maximum_agents, int) or not 0 <= minimum_agents <= maximum_agents:
             fail(f"{prefix}: invalid subagent range")
-        if not expected["should_trigger"]:
+        if not expected["routing_used"]:
             if expected["stage"] != "none" or expected["domain"] != "none" or expected["handling"] != "direct":
                 fail(f"{prefix}: inactive case must be none/none/direct")
             if maximum_agents or allowed_models or allowed_efforts or routes or invoked or writes:
@@ -226,8 +238,10 @@ def main() -> int:
             prefix = f"row {row_number} ({row['id']})"
             if not row["prompt"].strip() or row["category"] not in ALLOWED_CATEGORIES:
                 fail(f"{prefix}: empty prompt or invalid category")
-            if row["should_trigger"] not in {"true", "false"}:
-                fail(f"{prefix}: should_trigger must be true or false")
+            if row["expected_host_loaded"] not in {"true", "false"} or row["expected_routing_used"] not in {"true", "false"}:
+                fail(f"{prefix}: host/routing expectations must be true or false")
+            if row["expected_routing_used"] == "true" and row["expected_host_loaded"] != "true":
+                fail(f"{prefix}: routing requires host load")
             if row["expected_stage"] not in ALLOWED_STAGES or row["expected_domain"] not in ALLOWED_DOMAINS:
                 fail(f"{prefix}: invalid stage or domain")
             if row["expected_handling"] not in ALLOWED_HANDLING:
@@ -239,17 +253,19 @@ def main() -> int:
                 fail(f"{prefix}: shortcut case lacks a positive shortcut")
             if row["category"] not in {"formal", "shortcut"} and invocation in {"formal", "shortcut"}:
                 fail(f"{prefix}: formal/shortcut syntax has the wrong category")
-            if row["category"] in {"formal", "shortcut"} and row["should_trigger"] != "true":
-                fail(f"{prefix}: formal and shortcut cases must trigger")
+            if row["category"] in {"formal", "shortcut"} and row["expected_host_loaded"] != "true":
+                fail(f"{prefix}: formal and shortcut cases must request host loading")
+            if row["category"] == "shortcut" and row["expected_routing_used"] != "true":
+                fail(f"{prefix}: positive shortcuts must use routing")
             constraints = set(row["constraints"].split("|"))
             if not constraints <= ALLOWED_CONSTRAINTS:
                 fail(f"{prefix}: invalid constraint")
-            if row["should_trigger"] == "false":
+            if row["expected_routing_used"] == "false":
                 if row["expected_stage"] != "none" or row["expected_domain"] != "none" or row["expected_handling"] != "direct":
                     fail(f"{prefix}: inactive cases must be none/none/direct")
                 if row["expected_external_skill"]:
                     fail(f"{prefix}: inactive case cannot assign an external skill")
-            triggers[row["should_trigger"]] += 1
+            triggers[row["expected_routing_used"]] += 1
             categories[row["category"]] += 1
         if triggers["true"] < 8 or triggers["false"] < 8:
             fail("dataset needs at least eight positive and eight negative cases")
@@ -268,7 +284,7 @@ def main() -> int:
         return 1
 
     print(
-        f"validated {len(rows)} static cases: {triggers['true']} trigger, {triggers['false']} direct; "
+        f"validated {len(rows)} static cases: {triggers['true']} routed, {triggers['false']} direct; "
         f"categories={dict(sorted(categories.items()))}; e2e={e2e_counts}"
     )
     return 0
