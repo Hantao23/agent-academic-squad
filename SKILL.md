@@ -122,6 +122,13 @@ Answer directly without a subagent when the task is bounded and this routing lay
 - Treat the plan file as a supplement to chat, not a reason either to duplicate everything or to return an unusably thin answer. In chat, give a proportional account of the recommended mainline, decisions that actually require the user, material caveats, execution status, and a clickable absolute path. Detailed commands, configurations, and evidence tables may remain in the file when repeating them would not help the user decide.
 - When the user opts out, the cache helper fails, or the resolved path is not writable, return the faithful plan in chat instead of compressing it, and report that no plan file was saved.
 
+## Disclose subagent models used
+
+- Whenever this skill is active, end the user-facing final answer with a compact disclosure of the subagents that actually ran. For each one, give its exact model ID, reasoning effort, and task; include its primary external skill when one was used.
+- If no subagent ran, say `本次未调用子代理` or the natural-language equivalent. Do not report the dispatcher or main conversation model.
+- Keep planned assignments separate from actual use. Do not describe a model as used when it was only proposed, failed before starting, or appeared only as a routing default. If the runtime does not expose an actual subagent model or effort, state that the exact value is unavailable instead of inferring it.
+- Prefer one short line for one subagent and a compact list only when several actually ran. This disclosure is required, but it does not impose a template on the rest of the answer.
+
 ## Return useful handoffs
 
 For a plan, give the user enough to understand the proposed route and decide what happens next. Lead with the mainline and state that execution has not started; include only the dependencies, unresolved choices, cost or risk drivers, model assignments, and saved-plan path that materially affect that decision. Use natural prose, bullets, a table, or a longer artifact according to the task rather than a fixed response frame.

@@ -46,6 +46,7 @@ Core principles:
 - Implicit activation is supported. A conversation running `GPT-5.6 Sol medium` can perform the lightweight dispatch check; the main model does not need to be switched to xhigh first.
 - A single file, abstract, short script, small table, paragraph edit, or one tool call is not sufficient unless delegation would materially improve reliability.
 - User-selected models and reasoning effort always override defaults.
+- Every answer produced with the squad states which subagent models actually ran, including their reasoning effort and task; when none ran, it says so explicitly. The main conversation model is not reported.
 - One subagent is the default. Parallel agents are used only for genuinely independent work.
 - Multi-stage work tracks only dependencies that matter; agents are split by verifiable evidence or artifact boundaries, and disagreements are resolved from evidence rather than votes.
 - The dispatcher selects relevant conversation context and adds neutral, verifiable artifact and evidence indexes instead of copying the entire conversation.
