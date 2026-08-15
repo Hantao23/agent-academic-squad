@@ -68,8 +68,8 @@ def redact(text: str) -> str:
 def load_manifest(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as source:
         payload = json.load(source)
-    if not isinstance(payload, dict) or payload.get("schema_version") != 2:
-        raise ValueError("unsupported e2e manifest schema; expected version 2")
+    if not isinstance(payload, dict):
+        raise ValueError("e2e manifest must be an object")
     if not isinstance(payload.get("suite"), str) or not payload["suite"]:
         raise ValueError("e2e manifest suite must be a non-empty string")
     cases = payload.get("cases")
@@ -786,7 +786,7 @@ def setup_failure_result(case: dict[str, Any], failure: str, detail: str) -> dic
     }
 
 
-def command_version(command: list[str]) -> str | None:
+def command_output(command: list[str]) -> str | None:
     try:
         completed = subprocess.run(command, text=True, capture_output=True, timeout=10, check=False)
     except (OSError, subprocess.TimeoutExpired):
@@ -796,17 +796,15 @@ def command_version(command: list[str]) -> str | None:
 
 
 def git_commit() -> str | None:
-    return command_version(["git", "-C", str(ROOT), "rev-parse", "HEAD"])
+    return command_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"])
 
 
-def provenance(manifest_path: Path, codex_binary: str) -> dict[str, Any]:
+def provenance(manifest_path: Path) -> dict[str, Any]:
     return {
-        "codex_version": command_version([codex_binary, "--version"]),
         "runner_commit": git_commit(),
         "runner_sha256": file_digest(Path(__file__)),
         "manifest_sha256": file_digest(manifest_path),
         "platform": platform.platform(),
-        "python_version": platform.python_version(),
     }
 
 
@@ -903,11 +901,10 @@ def main() -> int:
         "inconclusive": statuses["inconclusive"],
     }
     summary = {
-        "schema_version": 2,
         "suite": manifest["suite"],
         "run_id": run_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "provenance": provenance(args.manifest, args.codex),
+        "provenance": provenance(args.manifest),
         "cases": results,
         "totals": totals,
     }

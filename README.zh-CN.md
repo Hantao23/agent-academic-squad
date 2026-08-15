@@ -152,7 +152,7 @@ python3 scripts/run_e2e_evals.py \
 
 runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把 trace、结构化 receipt 和汇总保存到已忽略的 `evals/results/`。工作区快照会比较前后路径全集，检测新增、修改、删除、类型变化、权限变化和符号链接目标变化，也不会排除被复制的 Skill。四目录审查使用真正的目录和文件 fixture，不再把全部证据塞进 prompt。
 
-评测结果分为 `pass`、`fail` 和 `inconclusive`。任何必需但无法观测的证据都不能被算成通过。结构化 receipt 记录模型自述的阶段、路由、代理、动作和最终状态，但它只是辅助证据；runner 会同时检查 JSONL 事件、命令和工作区变化，不能仅凭模型自述证明任务完成。增加 `--strict` 后，`fail` 和 `inconclusive` 都会返回非零。每份汇总还会记录 Codex 版本、runner 提交与哈希、manifest 哈希、平台和 Python 版本。
+评测结果分为 `pass`、`fail` 和 `inconclusive`。任何必需但无法观测的证据都不能被算成通过。结构化 receipt 记录模型自述的阶段、路由、代理、动作和最终状态，但它只是辅助证据；runner 会同时检查 JSONL 事件、命令和工作区变化，不能仅凭模型自述证明任务完成。增加 `--strict` 后，`fail` 和 `inconclusive` 都会返回非零。每份汇总还会记录 runner 提交与哈希、manifest 哈希和平台。
 
 有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 会移除环境中原有的 OpenAI 密钥变量，只把 `CODEX_API_KEY` 传给每个 `codex exec` 子进程。认证、网络、外部 Skill 缺失和超时会与 Skill 行为失败分开报告。
 
@@ -238,7 +238,7 @@ agent-academic-squad/
 ├── .github/workflows/               # 静态 CI 与手动 E2E 工作流
 ├── agents/openai.yaml               # Codex 界面元数据
 ├── evals/trigger-routing.csv         # 触发与路由回归案例
-├── evals/e2e-cases.json              # 核心 schema-v2 E2E 预期
+├── evals/e2e-cases.json              # 核心 E2E 预期
 ├── evals/nature-integration-cases.json # 可选 Nature 集成集
 ├── evals/receipt-schema.json         # 结构化自述 schema
 ├── evals/fixtures/                   # 真实读写 E2E fixture

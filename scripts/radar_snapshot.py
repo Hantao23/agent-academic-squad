@@ -28,13 +28,6 @@ def required_list(payload: dict[str, Any], key: str) -> list[Any]:
     return value
 
 
-def source_schema_version(payload: dict[str, Any]) -> str | int | None:
-    value = payload.get("schema_version", payload.get("schema"))
-    if value is not None and not isinstance(value, (str, int)):
-        raise ValueError("schema_version must be a string or integer when present")
-    return value
-
-
 def parse_timestamp(value: Any) -> datetime | None:
     if not isinstance(value, str) or not value.strip():
         return None
@@ -67,7 +60,7 @@ def numeric(value: Any) -> float | None:
 
 
 def fetch_json(url: str, timeout: float) -> Any:
-    request = Request(url, headers={"User-Agent": "agent-academic-squad/1.0"})
+    request = Request(url, headers={"User-Agent": "agent-academic-squad"})
     with urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
@@ -127,7 +120,6 @@ def compact_recommendations(payload: dict[str, Any]) -> dict[str, Any]:
             }
         )
     return {
-        "source_schema_version": source_schema_version(payload),
         "source_updated_at": payload.get("source_updated_at"),
         "groups": groups,
         "degradation_alert_rule": alert_rule,
@@ -162,7 +154,6 @@ def compact_deep_swe(payload: dict[str, Any]) -> dict[str, Any]:
         )
     )
     return {
-        "source_schema_version": source_schema_version(payload),
         "benchmark_id": payload.get("benchmark_id"),
         "source_updated_at": payload.get("source_updated_at"),
         "runs_24h_total": payload.get("runs_24h_total"),
@@ -179,7 +170,6 @@ def compact_community(payload: dict[str, Any]) -> dict[str, Any]:
             {key: model.get(key) for key in ("id", "label", "average", "count")}
         )
     return {
-        "source_schema_version": source_schema_version(payload),
         "day": payload.get("day"),
         "updated_at": payload.get("updated_at"),
         "models": models,
@@ -196,10 +186,9 @@ def compact_fast(payload: dict[str, Any]) -> dict[str, Any]:
     ]
     latest = max(dated_runs, key=lambda item: item[0])[1] if dated_runs else {}
     return {
-        "source_schema_version": source_schema_version(payload),
         "updated_at": payload.get("updated_at"),
         "latest": {
-            key: latest.get(key) for key in ("run_id", "measured_at", "cli_version", "models")
+            key: latest.get(key) for key in ("run_id", "measured_at", "models")
         },
     }
 
@@ -248,7 +237,6 @@ def main() -> int:
         parser.error("timeout and max-age-hours must be positive")
 
     snapshot: dict[str, Any] = {
-        "schema_version": 1,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "feeds": {},
         "errors": {},

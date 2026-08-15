@@ -247,10 +247,10 @@ class E2ERunnerTests(unittest.TestCase):
         self.assertEqual(environment["HOME"], str(workspace / ".home"))
 
     def test_provenance_records_reproducibility_fields(self) -> None:
-        data = run_e2e_evals.provenance(ROOT / "evals" / "e2e-cases.json", "codex")
+        data = run_e2e_evals.provenance(ROOT / "evals" / "e2e-cases.json")
         self.assertEqual(
             set(data),
-            {"codex_version", "runner_commit", "runner_sha256", "manifest_sha256", "platform", "python_version"},
+            {"runner_commit", "runner_sha256", "manifest_sha256", "platform"},
         )
         self.assertRegex(data["manifest_sha256"], r"^[0-9a-f]{64}$")
 

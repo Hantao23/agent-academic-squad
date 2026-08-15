@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate static routing cases and schema-v2 E2E manifests without a model."""
+"""Validate static routing cases and E2E manifests without running a model."""
 
 from __future__ import annotations
 
@@ -118,9 +118,9 @@ def validate_route(route: object, prefix: str) -> None:
 def validate_e2e_manifest(path: Path, source_case_ids: set[str]) -> int:
     with path.open(encoding="utf-8") as source:
         manifest = json.load(source)
-    if not isinstance(manifest, dict) or manifest.get("schema_version") != 2:
-        fail(f"{path.name}: unsupported schema_version")
-    if set(manifest) != {"schema_version", "suite", "cases"}:
+    if not isinstance(manifest, dict):
+        fail(f"{path.name}: manifest must be an object")
+    if set(manifest) != {"suite", "cases"}:
         fail(f"{path.name}: unexpected top-level fields")
     if not isinstance(manifest.get("suite"), str) or not manifest["suite"]:
         fail(f"{path.name}: invalid suite")

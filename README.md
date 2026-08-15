@@ -152,7 +152,7 @@ python3 scripts/run_e2e_evals.py \
 
 The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces, structured receipts, and summaries under `evals/results/`. Its workspace snapshots compare the full path union and detect creation, modification, deletion, type changes, mode changes, and symlink-target changes—including changes inside the copied Skill. The four-directory review uses real fixture files rather than embedding all evidence in the prompt.
 
-Results are `pass`, `fail`, or `inconclusive`. Required evidence that the current JSONL surface does not expose can never become a pass. The structured receipt describes the model's claimed stage, routes, agents, actions, and final state, but is explicitly self-report: it is checked alongside JSONL events, commands, and workspace changes and cannot alone prove task completion. Use `--strict` to make either `fail` or `inconclusive` return nonzero. Every summary records the Codex version, runner commit and hash, manifest hash, platform, and Python version.
+Results are `pass`, `fail`, or `inconclusive`. Required evidence that the current JSONL surface does not expose can never become a pass. The structured receipt describes the model's claimed stage, routes, agents, actions, and final state, but is explicitly self-report: it is checked alongside JSONL events, commands, and workspace changes and cannot alone prove task completion. Use `--strict` to make either `fail` or `inconclusive` return nonzero. Every summary records the runner commit and hash, manifest hash, and platform.
 
 Add `--strict-isolation` when `CODEX_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. The runner removes ambient OpenAI key variables and passes only `CODEX_API_KEY` to each `codex exec` subprocess. Authentication, network, missing external skills, and timeout failures are reported separately from Skill behavior.
 
@@ -234,7 +234,7 @@ agent-academic-squad/
 ├── .github/workflows/               # Static CI and manual E2E workflow
 ├── agents/openai.yaml               # Codex UI metadata
 ├── evals/trigger-routing.csv        # Trigger and routing regression cases
-├── evals/e2e-cases.json             # Core schema-v2 E2E expectations
+├── evals/e2e-cases.json             # Core E2E expectations
 ├── evals/nature-integration-cases.json # Optional Nature integration suite
 ├── evals/receipt-schema.json        # Structured self-report schema
 ├── evals/fixtures/                  # Real read/write E2E fixture trees

@@ -35,12 +35,10 @@ class RadarSnapshotTests(unittest.TestCase):
 
     def test_recommendations_accept_current_alert_container(self) -> None:
         payload = {
-            "schema": 1,
             "recommendations": [],
             "degradation_alerts": {"rule": "threshold", "items": []},
         }
         compacted = radar_snapshot.compact_recommendations(payload)
-        self.assertEqual(compacted["source_schema_version"], 1)
         self.assertEqual(compacted["degradation_alert_rule"], "threshold")
         self.assertEqual(compacted["degradation_alerts"], [])
 
