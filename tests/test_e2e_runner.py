@@ -276,6 +276,10 @@ class E2ERunnerTests(unittest.TestCase):
         self.assertNotIn("secret123", run_e2e_evals.redact("sk-secret123"))
         self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/plans/a.md"), "temporary_plan")
         self.assertEqual(run_e2e_evals.classify_write(".agents/plans/a.md"), "durable_plan")
+        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/reviews/a.md"), "temporary_review")
+        self.assertEqual(run_e2e_evals.classify_write(".agents/reviews/a.md"), "durable_review")
+        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/handoffs/a.md"), "temporary_handoff")
+        self.assertEqual(run_e2e_evals.classify_write(".agents/handoffs/a.md"), "durable_handoff")
         self.assertEqual(run_e2e_evals.classify_write("temporary/a.json"), "temporary_artifacts")
         self.assertEqual(
             run_e2e_evals.classify_write("wrong/agent-academic-squad/plans/fake.md"),
@@ -288,18 +292,22 @@ class E2ERunnerTests(unittest.TestCase):
         self.assertEqual(run_e2e_evals.outcome_exit_code(0, 0, 1, strict=True), 1)
         self.assertEqual(run_e2e_evals.outcome_exit_code(1, 0, 0, strict=False), 2)
 
-    def test_runtime_cache_noise_is_ignored_but_managed_plans_are_tracked(self) -> None:
+    def test_runtime_cache_noise_is_ignored_but_managed_auxiliary_files_are_tracked(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             workspace = Path(temporary)
             runtime_cache = workspace / ".cache" / "codex" / "state.json"
             plan = workspace / ".cache" / "agent-academic-squad" / "plans" / "plan.md"
+            review = workspace / ".cache" / "agent-academic-squad" / "reviews" / "review.md"
             runtime_cache.parent.mkdir(parents=True)
             plan.parent.mkdir(parents=True)
+            review.parent.mkdir(parents=True)
             runtime_cache.write_text("noise", encoding="utf-8")
             plan.write_text("plan", encoding="utf-8")
+            review.write_text("review", encoding="utf-8")
             snapshot = run_e2e_evals.snapshot_workspace(workspace)
         self.assertNotIn(".cache/codex/state.json", snapshot)
         self.assertIn(".cache/agent-academic-squad/plans/plan.md", snapshot)
+        self.assertIn(".cache/agent-academic-squad/reviews/review.md", snapshot)
 
     def test_codex_environment_scopes_api_key_to_codex_variable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -329,7 +337,7 @@ class E2ERunnerTests(unittest.TestCase):
             runtime_eval_dir_exists = (destination / "evals").exists()
         self.assertIn("SKILL.md", copied)
         self.assertIn("references/routing.md", copied)
-        self.assertIn("scripts/plan_cache.py", copied)
+        self.assertIn("scripts/artifact_cache.py", copied)
         self.assertNotIn("evals/e2e-cases.json", copied)
         self.assertNotIn("evals/receipt-schema.json", copied)
         self.assertNotIn("scripts/run_e2e_evals.py", copied)

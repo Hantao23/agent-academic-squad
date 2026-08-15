@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Allocate and safely expire temporary academic-squad plan files."""
+"""Allocate and safely expire temporary academic-squad auxiliary artifacts."""
 
 from __future__ import annotations
 
@@ -16,6 +16,11 @@ from pathlib import Path
 
 
 DEFAULT_RETENTION_DAYS = 30
+KIND_DIRECTORIES = {
+    "plan": "plans",
+    "review": "reviews",
+    "handoff": "handoffs",
+}
 MANAGED_NAME = re.compile(r"^\d{8}T\d{6}Z-[a-z0-9][a-z0-9-]{0,79}\.md$")
 
 
@@ -31,15 +36,22 @@ def is_temporary_root(path: Path) -> bool:
     return is_within(path, Path("/tmp")) or is_within(path, Path("/var/tmp"))
 
 
-def cache_root() -> Path:
+def validate_kind(kind: str) -> str:
+    if kind not in KIND_DIRECTORIES:
+        raise ValueError(f"unknown auxiliary artifact kind: {kind}")
+    return kind
+
+
+def cache_root(kind: str = "plan") -> Path:
+    kind = validate_kind(kind)
     fallback = (Path.home() / ".cache").resolve(strict=False)
     configured = os.environ.get("XDG_CACHE_HOME")
     base = Path(configured).expanduser() if configured else fallback
     if not base.is_absolute():
         base = fallback
-    candidate = (base / "agent-academic-squad" / "plans").resolve(strict=False)
+    candidate = (base / "agent-academic-squad" / KIND_DIRECTORIES[kind]).resolve(strict=False)
     if is_temporary_root(candidate):
-        candidate = (fallback / "agent-academic-squad" / "plans").resolve(strict=False)
+        candidate = (fallback / "agent-academic-squad" / KIND_DIRECTORIES[kind]).resolve(strict=False)
     if is_temporary_root(candidate):
         raise RuntimeError("no managed cache root is available outside temporary directories")
     return candidate
@@ -55,10 +67,10 @@ def prepare_root(root: Path) -> None:
         pass
 
 
-def slugify(value: str) -> str:
+def slugify(value: str, fallback: str = "artifact") -> str:
     normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
     slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
-    return (slug or "plan")[:64].rstrip("-") or "plan"
+    return (slug or fallback)[:64].rstrip("-") or fallback
 
 
 def validate_retention(days: int) -> int:
@@ -90,10 +102,10 @@ def cleanup(root: Path, retention_days: int, now: float | None = None) -> list[s
     return sorted(deleted)
 
 
-def allocate(root: Path, slug: str, retention_days: int) -> tuple[Path, list[str]]:
+def allocate(root: Path, slug: str, retention_days: int, fallback: str = "artifact") -> tuple[Path, list[str]]:
     deleted = cleanup(root, retention_days)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    safe_slug = slugify(slug)
+    safe_slug = slugify(slug, fallback)
     for revision in range(1000):
         suffix = "" if revision == 0 else f"-{revision}"
         candidate = root / f"{timestamp}-{safe_slug}{suffix}.md"
@@ -103,23 +115,25 @@ def allocate(root: Path, slug: str, retention_days: int) -> tuple[Path, list[str
             continue
         os.close(descriptor)
         return candidate.absolute(), deleted
-    raise RuntimeError("could not allocate a unique managed plan path")
+    raise RuntimeError("could not allocate a unique managed auxiliary artifact path")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("allocate", "cleanup"))
-    parser.add_argument("--slug", default="plan", help="Task slug used for an allocated file")
+    parser.add_argument("--kind", choices=tuple(KIND_DIRECTORIES), default="plan")
+    parser.add_argument("--slug", default="artifact", help="Task slug used for an allocated file")
     parser.add_argument("--retention-days", type=int, default=DEFAULT_RETENTION_DAYS)
     args = parser.parse_args()
 
     try:
         retention_days = validate_retention(args.retention_days)
-        root = cache_root()
+        root = cache_root(args.kind)
         if args.command == "allocate":
-            path, deleted = allocate(root, args.slug, retention_days)
+            path, deleted = allocate(root, args.slug, retention_days, args.kind)
             result = {
                 "path": str(path),
+                "kind": args.kind,
                 "temporary": True,
                 "retention_days": retention_days,
                 "deleted": deleted,
@@ -128,6 +142,7 @@ def main() -> int:
             deleted = cleanup(root, retention_days)
             result = {
                 "root": str(root),
+                "kind": args.kind,
                 "retention_days": retention_days,
                 "deleted": deleted,
             }

@@ -31,7 +31,8 @@ ALLOWED_DOMAINS = {"none", "code_experiment", "mathematics", "paper", "general"}
 ALLOWED_HANDLING = {"direct", "subagent", "plan_first"}
 ALLOWED_CONSTRAINTS = {
     "none", "read_only", "plan_only", "respect_model_override", "no_file_write",
-    "direct_execution", "temporary_plan", "durable_plan", "long_running",
+    "direct_execution", "temporary_plan", "durable_plan", "temporary_review", "durable_review",
+    "temporary_handoff", "durable_handoff", "long_running",
     "temporary_artifacts", "workspace_read_only", "unavailable_model",
     "single_writer", "no_plan_save", "formal_literal_context", "formal_opt_out",
     "sensitive_no_store", "explicit_general", "proportional_direct",
@@ -54,7 +55,10 @@ E2E_CASE_FIELDS = {
 }
 ALLOWED_SANDBOXES = {"read-only", "workspace-write"}
 ALLOWED_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
-ALLOWED_WRITES = {"temporary_plan", "durable_plan", "temporary_artifacts", "workspace"}
+ALLOWED_WRITES = {
+    "temporary_plan", "durable_plan", "temporary_review", "durable_review",
+    "temporary_handoff", "durable_handoff", "temporary_artifacts", "workspace",
+}
 ALLOWED_FINAL_STATES = {
     "direct_answer", "plan_ready", "review_complete", "execution_complete",
     "launched", "running", "handoff_ready", "blocked",

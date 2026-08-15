@@ -28,7 +28,7 @@ RUNTIME_PACKAGE_PATHS = (
     Path("SKILL.md"),
     Path("agents"),
     Path("references"),
-    Path("scripts/plan_cache.py"),
+    Path("scripts/artifact_cache.py"),
     Path("scripts/radar_snapshot.py"),
 )
 SAFE_ENV_KEYS = (
@@ -158,8 +158,10 @@ def snapshot_workspace(workspace: Path) -> dict[str, dict[str, Any]]:
         if relative.parts and relative.parts[0] in SNAPSHOT_IGNORED_ROOTS:
             continue
         if relative.parts and relative.parts[0] == ".cache":
-            managed_cache = (".cache", "agent-academic-squad", "plans")
-            if tuple(relative.parts[: min(len(relative.parts), 3)]) != managed_cache[: min(len(relative.parts), 3)]:
+            managed_prefix = (".cache", "agent-academic-squad")
+            if tuple(relative.parts[: min(len(relative.parts), 2)]) != managed_prefix[: min(len(relative.parts), 2)]:
+                continue
+            if len(relative.parts) >= 3 and relative.parts[2] not in {"plans", "reviews", "handoffs"}:
                 continue
         try:
             metadata = path.lstat()
@@ -225,10 +227,19 @@ def classify_write(path: str) -> str:
     parts = normalized.parts
     if normalized.is_absolute() or ".." in parts:
         return "workspace"
-    if parts[:3] == (".cache", "agent-academic-squad", "plans") and len(parts) > 3 and normalized.suffix.lower() == ".md":
-        return "temporary_plan"
-    if parts[:2] == (".agents", "plans") and len(parts) > 2 and normalized.suffix.lower() == ".md":
-        return "durable_plan"
+    auxiliary_kinds = {
+        "plans": "plan",
+        "reviews": "review",
+        "handoffs": "handoff",
+    }
+    if parts[:2] == (".cache", "agent-academic-squad") and len(parts) > 3 and normalized.suffix.lower() == ".md":
+        kind = auxiliary_kinds.get(parts[2])
+        if kind:
+            return f"temporary_{kind}"
+    if parts and parts[0] == ".agents" and len(parts) > 2 and normalized.suffix.lower() == ".md":
+        kind = auxiliary_kinds.get(parts[1])
+        if kind:
+            return f"durable_{kind}"
     if parts and parts[0] in {"tmp", "temporary"} and len(parts) > 1:
         return "temporary_artifacts"
     return "workspace"
