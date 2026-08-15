@@ -130,7 +130,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 40 positive, negative, contextual, and boundary cases for activation, stage, domain, delegation, external skills, read-only constraints, and user model overrides. `evals/e2e-cases.json` adds 10 richer cases with multi-skill routes, subagent bounds, allowed models and efforts, expected writes, final states, and forbidden actions. The datasets include generalized examples derived from real usage, but store no original task transcript or private path.
+`evals/trigger-routing.csv` contains 41 positive, negative, contextual, and boundary cases for activation, stage, domain, delegation, external skills, read-only constraints, and user model overrides. `evals/e2e-cases.json` adds 11 richer cases with multi-skill routes, subagent bounds, allowed models and efforts, expected writes, final states, and forbidden actions. The datasets include generalized examples derived from real usage, but store no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 

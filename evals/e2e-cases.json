@@ -135,9 +135,28 @@
       }
     },
     {
-      "id": "e2e-no-file-write",
+      "id": "e2e-direct-bounded-result-check",
       "source_case_id": "eval-038",
-      "prompt": "Review the following four experiment outcomes for whether they support a monotonic accuracy claim: 0.61, 0.66, 0.64, 0.70. Use an independent reviewer, do not write files, and do not rerun anything.",
+      "prompt": "Four experiment accuracies are 0.61, 0.66, 0.64, and 0.70. Decide whether they are strictly increasing. Answer directly and do not write files.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": false,
+        "stage": "none",
+        "domain": "none",
+        "handling": "direct",
+        "external_skills": [],
+        "subagents": {"min": 0, "max": 0},
+        "models": [],
+        "efforts": [],
+        "writes": [],
+        "final_states": ["direct_answer"],
+        "forbidden_actions": ["file_write", "subagent"]
+      }
+    },
+    {
+      "id": "e2e-no-file-write-review",
+      "source_case_id": "eval-041",
+      "prompt": "Independently audit this four-directory experiment evidence packet for the paper's robustness claim. dir-a: seeds 1/2/3 scores 0.81/0.80/0.82, no failures; dir-b: 0.79/0.78/0.80, one timeout excluded from summary; dir-c: 0.83/0.62/0.84, seed 2 decode failure omitted from the aggregate; dir-d: 0.80/0.81/0.79, configuration uses a different preprocessing flag. Reconcile configurations, per-seed metrics, failure handling, and aggregate claims. Use one independent reviewer, do not write files, rerun experiments, or modify artifacts.",
       "sandbox": "read-only",
       "expected": {
         "should_trigger": true,
@@ -150,7 +169,7 @@
         "efforts": ["xhigh"],
         "writes": [],
         "final_states": ["review_complete"],
-        "forbidden_actions": ["file_write", "experiment_execution"]
+        "forbidden_actions": ["file_write", "experiment_execution", "artifact_modification"]
       }
     },
     {

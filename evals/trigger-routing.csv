@@ -36,6 +36,7 @@ eval-034,negative,false,none,none,direct,,none,"不要使用 $agent-academic-squ
 eval-035,implicit,true,review,mathematics,subagent,,read_only,"Independently audit this information-theory proof for invalid implications and report only the failing steps; do not modify the source."
 eval-036,implicit,true,plan,mathematics,subagent,,plan_only|temporary_plan,"Develop a proof strategy for a new coding bound, expose all unresolved lemmas, and stop before attempting the proof."
 eval-037,implicit,true,plan,code_experiment,subagent,,plan_only|unavailable_model,"Plan the benchmark with gpt-9-max, but do not silently substitute another model if it is unavailable."
-eval-038,implicit,true,review,code_experiment,subagent,,read_only|no_file_write,"只读审查四个实验结果目录是否支持论文主结论；不得写文件、重跑实验或修改产物。"
+eval-038,boundary,false,none,none,direct,,read_only|no_file_write,"四次实验准确率依次是 0.61、0.66、0.64、0.70，判断它们是否严格单调上升；直接回答，不写文件。"
 eval-039,implicit,true,execute,code_experiment,subagent,,single_writer,"分别独立分析两个互不依赖的实验结果集合，最后只允许一个写作者合并成统一报告。"
 eval-040,implicit,true,plan,code_experiment,subagent,,plan_only|no_plan_save,"规划这个高成本消融实验，但本次不要保存任何计划文件，也不要执行。"
+eval-041,implicit,true,review,code_experiment,subagent,,read_only|no_file_write|workspace_read_only,"独立审查四个实验目录中的配置、逐随机种子指标、失败日志和汇总表是否共同支持论文的稳健性主张；不得写文件、重跑实验或修改产物。"

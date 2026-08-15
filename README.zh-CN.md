@@ -130,7 +130,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供40条正例、负例、上下文和边界案例，覆盖是否触发、阶段、领域、委派、外部 Skill、只读约束和用户模型覆盖。`evals/e2e-cases.json` 另有10条富 E2E 案例，可表达多 Skill 路由、子代理数量范围、允许的模型和 effort、预期写入、最终状态及禁止动作。
+`evals/trigger-routing.csv` 提供41条正例、负例、上下文和边界案例，覆盖是否触发、阶段、领域、委派、外部 Skill、只读约束和用户模型覆盖。`evals/e2e-cases.json` 另有11条富 E2E 案例，可表达多 Skill 路由、子代理数量范围、允许的模型和 effort、预期写入、最终状态及禁止动作。
 
 其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
 
