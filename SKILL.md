@@ -1,11 +1,19 @@
 ---
 name: agent-academic-squad
-description: Coordinate user-directed academic planning and execution through Codex subagents for code and experiments, mathematics and algorithms, and literature search, paper reading, scientific writing, or review. Use when the user invokes $agent-academic-squad, asks the main model to delegate academic work, requests a plan before costly execution, specifies a model for a planning/execution/review stage, or uses Chinese requests such as 学术小分队、分给子agent、先规划再执行、找人跑实验、找人证明、找读写论文. Do not invoke implicitly for a trivial direct answer that does not benefit from delegation.
+description: On-demand academic task routing for Codex. Implicitly use for nontrivial code/experiment, mathematics/algorithm, or paper work when the request likely needs delegation, planning before costly work, artifact or literature inspection, tools or an external academic skill, independent verification, several dependent steps, more than about two minutes, or a high-stakes scientific decision. Also use when the user invokes $agent-academic-squad or asks for 学术小分队、子agent、先规划再执行、跑实验、证明、找读写论文. Do not invoke for a simple low-stakes question answerable from active context in about two minutes without tools, artifact reading, external skills, or independent review.
 ---
 
 # agent学术小分队
 
 Act as the user's dispatcher, not as an organization or approval authority. Let the user command the work, choose or override models, review results, and decide whether a plan should be executed.
+
+## Activate on demand
+
+- Explicit invocation, delegation, planning, execution, review, or model-assignment instructions always activate this skill.
+- For an ordinary academic request, leave the skill inactive only when all of these are true: the task is bounded and low stakes; the decisive context is already present; no repository, file, paper, web, tool, or external-skill inspection is needed; no independent judgment or delegation would materially improve reliability; and the main model can give a complete answer in about two minutes.
+- Activate implicitly when any one of those conditions fails, including nontrivial proof or algorithm work, artifact-backed analysis, code or experiment work, literature workflows, multi-stage work, costly execution, or scientifically consequential review.
+- At the boundary, activate when delegation or a specialized academic skill is likely to improve reliability materially; otherwise answer directly. Keep this threshold intentionally modest rather than reserving the skill only for very large tasks.
+- If the host activates the skill for an apparently simple request, perform the lightweight routing pass and answer directly without spawning a subagent when the direct-answer conditions are in fact satisfied.
 
 ## Load routing rules
 
@@ -25,7 +33,7 @@ Apply this order:
 
 Treat a task-specific override as temporary. Never silently substitute an unavailable model. Report the unavailable choice and ask for direction when no equivalent route is already authorized.
 
-Assume the main dispatcher is Sol xhigh. If the current main model is inspectable and differs, state that once; do not claim that the skill changed the main model.
+Use the model already selected for the current conversation as the dispatcher. Treat `gpt-5.6-sol` at `medium` as the normal baseline for lightweight activation and routing judgment; invoking this skill does not require Sol xhigh and does not change the main model. Assign stronger or specialized subagents only after the task crosses the activation threshold and the routing rules call for them. If the inspectable main model differs from the user's stated choice, state that once.
 
 ## Route the task
 
@@ -52,7 +60,7 @@ Use judgment rather than converting these signals into task cards, scores, gates
 
 Before delegating, perform a lightweight dispatch pass. Reuse facts already present in the active context. When location is still needed, spend about 30 seconds by default and no more than about 60 seconds or 3--5 read-only lookups finding the relevant artifacts, terminology, and decision criteria. Do not duplicate the subagent's substantive investigation.
 
-Answer directly when the task is bounded, the main dispatcher already has the decisive context, the answer should take about 90 seconds or less, and the user did not explicitly request this skill, delegation, or independent review.
+Answer directly without a subagent only when the direct-answer conditions in `Activate on demand` are all satisfied and the user did not explicitly request delegation or independent review.
 
 ## Delegate minimally
 
