@@ -130,20 +130,29 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains positive, negative, contextual, and boundary cases for activation, stage, domain, delegation, external skills, read-only constraints, and user model overrides. It also includes generalized examples derived from real usage: launching a long experiment from an existing protocol, auditing several experiment directories without modifying them, and writing fault-injection artifacts only to temporary storage. No original task transcript or private path is stored.
+`evals/trigger-routing.csv` contains 40 positive, negative, contextual, and boundary cases for activation, stage, domain, delegation, external skills, read-only constraints, and user model overrides. `evals/e2e-cases.json` adds 10 richer cases with multi-skill routes, subagent bounds, allowed models and efforts, expected writes, final states, and forbidden actions. The datasets include generalized examples derived from real usage, but store no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
 ```bash
 python3 scripts/validate_eval_cases.py
 python3 -m unittest discover -s tests -v
+python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 ```
 
-Real trigger regression should run the prompts in isolated tasks with `codex exec --json --ephemeral` and preserve the traces. Dataset validation is not presented as a real model evaluation; it verifies schema, coverage, and expected labels only.
+Run real, isolated JSONL smoke evals only when the Codex CLI has valid credentials:
+
+```bash
+python3 scripts/run_e2e_evals.py --max-cases 3
+```
+
+The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces and summaries under `evals/results/`. Add `--strict-isolation` when `OPENAI_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. Authentication, network, and timeout failures are reported separately from Skill failures. Some routing fields remain explicitly `unverifiable` until the Codex JSONL surface exposes stable events for them.
+
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, runs three cases by default, and uploads redacted artifacts for 14 days. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 
-The shortest natural-language explicit invocation starts the message with `小分队` (“squad”). A colon, comma, or space is optional:
+As a best-effort natural-language shortcut, start the message with `小分队` (“squad”). A colon, comma, or space is optional. This shortcut still depends on Codex matching the skill description; `$agent-academic-squad` is the formal explicit invocation syntax.
 
 ```text
 小分队帮我审查这三个实验目录，按测序深度输出表格。
@@ -153,7 +162,7 @@ The shortest natural-language explicit invocation starts the message with `小�
 这个交给小分队，只规划，不执行。
 ```
 
-Negations such as `不用小分队` or `不要交给小分队`, and sentences that merely discuss the name, do not trigger the skill. The formal syntax remains available:
+Negations such as `不用小分队`, `不要交给小分队`, or `不要使用 $agent-academic-squad`, and sentences that merely discuss the name, do not trigger the skill. The formal syntax is:
 
 ```text
 $agent-academic-squad Plan this cross-module experiment first. Do not execute it. Include expected cost and model assignments.
@@ -205,13 +214,16 @@ agent-academic-squad/
 ├── LICENSE                          # MIT License
 ├── README.md                        # English documentation
 ├── README.zh-CN.md                  # Simplified Chinese documentation
+├── .github/workflows/               # Static CI and manual E2E workflow
 ├── agents/openai.yaml               # Codex UI metadata
 ├── evals/trigger-routing.csv        # Trigger and routing regression cases
+├── evals/e2e-cases.json             # Rich E2E expectations
 ├── references/routing.md            # Model and effort routing
 ├── references/external-skills.md    # External academic skill mapping
 ├── scripts/plan_cache.py             # Temporary plan allocation and cleanup
 ├── scripts/radar_snapshot.py         # Optional read-only Codex Radar snapshot
 ├── scripts/validate_eval_cases.py    # Deterministic eval-data validation
+├── scripts/run_e2e_evals.py          # Isolated Codex JSONL eval runner
 └── tests/                            # Cache, eval, and Radar unit tests
 ```
 

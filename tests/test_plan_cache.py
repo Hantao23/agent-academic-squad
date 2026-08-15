@@ -50,6 +50,15 @@ class PlanCacheTests(unittest.TestCase):
         self.assertFalse(plan_cache.is_within(root, Path("/tmp")))
         self.assertFalse(plan_cache.is_within(root, Path("/var/tmp")))
 
+    def test_cache_root_rejects_tmp_home_and_xdg_cache(self) -> None:
+        environment = {
+            "HOME": "/tmp/test-user",
+            "XDG_CACHE_HOME": "/tmp/custom-cache",
+        }
+        with patch.dict(os.environ, environment, clear=False):
+            with self.assertRaisesRegex(RuntimeError, "outside temporary directories"):
+                plan_cache.cache_root()
+
     def test_slug_and_retention_bounds(self) -> None:
         self.assertEqual(plan_cache.slugify("DNA Storage / Ablation"), "dna-storage-ablation")
         self.assertEqual(plan_cache.slugify("中文"), "plan")

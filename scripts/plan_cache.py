@@ -27,6 +27,10 @@ def is_within(path: Path, parent: Path) -> bool:
         return False
 
 
+def is_temporary_root(path: Path) -> bool:
+    return is_within(path, Path("/tmp")) or is_within(path, Path("/var/tmp"))
+
+
 def cache_root() -> Path:
     fallback = (Path.home() / ".cache").resolve(strict=False)
     configured = os.environ.get("XDG_CACHE_HOME")
@@ -34,8 +38,10 @@ def cache_root() -> Path:
     if not base.is_absolute():
         base = fallback
     candidate = (base / "agent-academic-squad" / "plans").resolve(strict=False)
-    if is_within(candidate, Path("/tmp")) or is_within(candidate, Path("/var/tmp")):
+    if is_temporary_root(candidate):
         candidate = (fallback / "agent-academic-squad" / "plans").resolve(strict=False)
+    if is_temporary_root(candidate):
+        raise RuntimeError("no managed cache root is available outside temporary directories")
     return candidate
 
 

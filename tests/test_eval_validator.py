@@ -29,6 +29,8 @@ class EvalValidatorTests(unittest.TestCase):
         prompts = (
             "不用小分队，直接回答。",
             "不要交给小分队。",
+            "不要使用 $agent-academic-squad，直接回答。",
+            "别调用 $agent-academic-squad，我只想自己处理。",
             "我只是在讨论小分队的名字。",
             "小分队这个称呼是否合适？",
         )

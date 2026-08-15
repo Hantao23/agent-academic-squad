@@ -118,7 +118,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "$HOME/.agents/sk
 git clone https://github.com/Hantao23/agent-academic-squad.git .agents/skills/agent-academic-squad
 ```
 
-部分 Codex Desktop 或旧版 Codex 环境仍从 `$CODEX_HOME/skills`（通常为 `~/.codex/skills`）发现用户 Skill；当前环境采用该位置：
+部分 Codex Desktop 或旧版 Codex 环境可能仍从 `$CODEX_HOME/skills`（通常为 `~/.codex/skills`）发现用户 Skill：
 
 ```bash
 git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$HOME/.codex}/skills/agent-academic-squad"
@@ -130,20 +130,29 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供正例、负例和边界案例，覆盖是否触发、阶段、领域、委派、外部 Skill、只读约束和用户模型覆盖。先运行确定性数据校验：
+`evals/trigger-routing.csv` 提供40条正例、负例、上下文和边界案例，覆盖是否触发、阶段、领域、委派、外部 Skill、只读约束和用户模型覆盖。`evals/e2e-cases.json` 另有10条富 E2E 案例，可表达多 Skill 路由、子代理数量范围、允许的模型和 effort、预期写入、最终状态及禁止动作。
 
-其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。
+其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
 
 ```bash
 python3 scripts/validate_eval_cases.py
 python3 -m unittest discover -s tests -v
+python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 ```
 
-真实触发回归应在新的隔离任务中使用 `codex exec --json --ephemeral` 运行这些 prompts，并保存 trace。数据集校验不会冒充真实模型评估；它只保证案例格式、覆盖面和预期标签一致。
+只有 Codex CLI 凭据有效时才运行真实、隔离的 JSONL 烟雾评测：
+
+```bash
+python3 scripts/run_e2e_evals.py --max-cases 3
+```
+
+runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把已忽略追踪的 trace 和汇总保存到 `evals/results/`。有可用的 `OPENAI_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。认证、网络和超时失败与 Skill 失败分开报告；Codex JSONL 尚未稳定暴露的路由字段会明确标记为 `unverifiable`。
+
+`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，默认运行3条并保留脱敏产物14天。数据集校验和 dry-run 不会冒充真实模型评测。
 
 ## 使用示例
 
-最简自然语言显式调用是让消息以“`小分队`”开头；冒号、逗号和空格均可省略：
+作为尽力匹配的自然语言快捷触发，可以让消息以“`小分队`”开头；冒号、逗号和空格均可省略。这个快捷词仍依赖 Codex 根据 description 匹配到本 Skill；`$agent-academic-squad` 才是正式显式调用语法。
 
 ```text
 小分队帮我审查这三个实验目录，按测序深度输出表格。
@@ -153,7 +162,7 @@ python3 -m unittest discover -s tests -v
 这个交给小分队，只规划，不执行。
 ```
 
-`不用小分队`、`不要交给小分队`以及仅仅讨论“小分队”的句子不会触发。正式 Skill 语法仍然可用：
+`不用小分队`、`不要交给小分队`、`不要使用 $agent-academic-squad` 以及仅仅讨论“小分队”的句子不会触发。正式 Skill 语法是：
 
 ```text
 $agent-academic-squad 先规划这个跨模块实验，不要执行，给出预计成本和模型分配。
@@ -209,13 +218,16 @@ agent-academic-squad/
 ├── LICENSE                          # MIT License
 ├── README.md                        # 英文文档
 ├── README.zh-CN.md                  # 简体中文文档
+├── .github/workflows/               # 静态 CI 与手动 E2E 工作流
 ├── agents/openai.yaml               # Codex 界面元数据
 ├── evals/trigger-routing.csv         # 触发与路由回归案例
+├── evals/e2e-cases.json              # 富 E2E 预期
 ├── references/routing.md            # 模型与推理强度路由
 ├── references/external-skills.md    # 外部学术 Skill 映射
 ├── scripts/plan_cache.py             # 临时计划路径与安全清理
 ├── scripts/radar_snapshot.py         # 可选的 Codex Radar 只读快照
 ├── scripts/validate_eval_cases.py    # Eval 数据确定性校验
+├── scripts/run_e2e_evals.py          # 隔离的 Codex JSONL Eval runner
 └── tests/                            # 缓存、评测和 Radar 单元测试
 ```
 

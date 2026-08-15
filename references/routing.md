@@ -28,7 +28,7 @@ Use these exact model IDs when dispatching:
 - Terra: `gpt-5.6-terra`
 - Luna: `gpt-5.6-luna`
 
-The words `medium`, `high`, `xhigh`, `max`, and `ultra` refer to reasoning effort, not separate model IDs.
+The words `medium`, `high`, `xhigh`, and `max` are standard reasoning-effort values, not separate model IDs. `ultra` is an optional high-compute Codex orchestration mode exposed by some environments; it is neither a model ID nor a standard Responses API `reasoning.effort` value.
 
 ## Workload and decision stakes
 
@@ -68,7 +68,7 @@ Return the plan and stop. A plan request does not authorize execution.
 | Debug code during experiment execution | Sol xhigh |
 | Statistical or theoretical analysis | Sol max |
 
-Use Sol ultra only when the user explicitly requests it or accepts a disclosed escalation.
+Use an environment-provided ultra mode with Sol only when the current Codex surface explicitly supports it and the user requests it or accepts a disclosed escalation.
 
 ## Mathematics defaults
 
@@ -77,7 +77,7 @@ Use Sol ultra only when the user explicitly requests it or accepts a disclosed e
 | Check calculations or organize known formulas | Sol high |
 | Analyze a strategy or construct an algorithm | Sol xhigh |
 | Formal proof, difficult derivation, or statistical theory | Sol max |
-| Extreme problem beyond the default route | Sol ultra with user approval |
+| Extreme problem beyond the default route | Environment-provided ultra mode with Sol, with user approval |
 
 ## Paper defaults
 

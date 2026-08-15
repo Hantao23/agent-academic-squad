@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate eval datasets
+        run: python3 scripts/validate_eval_cases.py
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Validate E2E runner CLI
+        run: python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
+      - name: Check Skill frontmatter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          text = Path("SKILL.md").read_text(encoding="utf-8")
+          assert text.startswith("---\n"), "SKILL.md must start with YAML frontmatter"
+          frontmatter = text.split("---\n", 2)[1]
+          fields = {}
+          for line in frontmatter.splitlines():
+              key, value = line.split(":", 1)
+              fields[key.strip()] = value.strip()
+          assert set(fields) == {"name", "description"}, fields
+          assert fields["name"] == "agent-academic-squad"
+          description = fields["description"].strip('"\'')
+          assert 1 <= len(description) <= 1024
+          PY
+      - name: Check whitespace
+        run: git show --check --format= HEAD

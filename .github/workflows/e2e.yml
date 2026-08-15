@@ -1,0 +1,41 @@
+name: Manual E2E Evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_cases:
+        description: Number of E2E cases to run
+        required: true
+        default: "3"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Codex CLI
+        run: npm install --global @openai/codex
+      - name: Run isolated JSONL E2E evals
+        env:
+          E2E_MAX_CASES: ${{ inputs.max_cases }}
+        run: python3 scripts/run_e2e_evals.py --strict-isolation --max-cases "$E2E_MAX_CASES"
+      - name: Upload redacted traces and summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-academic-squad-e2e
+          path: evals/results/
+          if-no-files-found: warn
+          retention-days: 14

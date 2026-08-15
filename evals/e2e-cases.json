@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "e2e-direct-simple",
+      "source_case_id": "eval-001",
+      "prompt": "Explain Bayes' theorem with one short numerical example.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": false,
+        "stage": "none",
+        "domain": "none",
+        "handling": "direct",
+        "external_skills": [],
+        "subagents": {"min": 0, "max": 0},
+        "models": [],
+        "efforts": [],
+        "writes": [],
+        "final_states": ["direct_answer"],
+        "forbidden_actions": ["file_write", "subagent"]
+      }
+    },
+    {
+      "id": "e2e-direct-bounded-academic",
+      "source_case_id": "eval-003",
+      "prompt": "This research helper is five lines long: `def mean(xs): return sum(xs) / len(xs)`. Check the obvious edge case only and do not modify files.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": false,
+        "stage": "none",
+        "domain": "none",
+        "handling": "direct",
+        "external_skills": [],
+        "subagents": {"min": 0, "max": 0},
+        "models": [],
+        "efforts": [],
+        "writes": [],
+        "final_states": ["direct_answer"],
+        "forbidden_actions": ["file_write", "subagent"]
+      }
+    },
+    {
+      "id": "e2e-implicit-math-review",
+      "source_case_id": "eval-035",
+      "prompt": "Independently review this claimed proof: `H(X,Y)=H(X)+H(Y)` for all random variables because joint entropy always adds. Identify the invalid step and do not edit files.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true,
+        "stage": "review",
+        "domain": "mathematics",
+        "handling": "subagent",
+        "external_skills": [],
+        "subagents": {"min": 1, "max": 1},
+        "models": ["gpt-5.6-sol"],
+        "efforts": ["max"],
+        "writes": [],
+        "final_states": ["review_complete"],
+        "forbidden_actions": ["file_write", "artifact_modification"]
+      }
+    },
+    {
+      "id": "e2e-implicit-plan",
+      "source_case_id": "eval-012",
+      "prompt": "Plan three dependent ablation experiments for a research encoder. Include parameters, cost drivers, validation and stop conditions. Do not execute.",
+      "sandbox": "workspace-write",
+      "expected": {
+        "should_trigger": true,
+        "stage": "plan",
+        "domain": "code_experiment",
+        "handling": "subagent",
+        "external_skills": [],
+        "subagents": {"min": 1, "max": 1},
+        "models": ["gpt-5.6-sol"],
+        "efforts": ["high", "xhigh"],
+        "writes": ["temporary_plan"],
+        "final_states": ["plan_ready"],
+        "forbidden_actions": ["experiment_execution"]
+      }
+    },
+    {
+      "id": "e2e-formal-plan",
+      "source_case_id": "eval-026",
+      "prompt": "$agent-academic-squad Plan a complete research experiment, save the plan permanently in the workspace, and do not execute it.",
+      "sandbox": "workspace-write",
+      "expected": {
+        "should_trigger": true,
+        "stage": "plan",
+        "domain": "code_experiment",
+        "handling": "subagent",
+        "external_skills": [],
+        "subagents": {"min": 1, "max": 1},
+        "models": ["gpt-5.6-sol"],
+        "efforts": ["high", "xhigh"],
+        "writes": ["durable_plan"],
+        "final_states": ["plan_ready"],
+        "forbidden_actions": ["experiment_execution"]
+      }
+    },
+    {
+      "id": "e2e-natural-shortcut",
+      "source_case_id": "eval-031",
+      "prompt": "小分队帮我规划一篇综述的检索、精读和写作流程，不要执行，也不要遗漏模型分配。",
+      "sandbox": "workspace-write",
+      "expected": {
+        "should_trigger": true,
+        "stage": "plan",
+        "domain": "paper",
+        "handling": "subagent",
+        "external_skills": ["nature-academic-search", "nature-reader", "nature-writing"],
+        "subagents": {"min": 1, "max": 3},
+        "models": ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"],
+        "efforts": ["high", "xhigh", "max"],
+        "writes": ["temporary_plan"],
+        "final_states": ["plan_ready"],
+        "forbidden_actions": ["literature_search", "manuscript_write"]
+      }
+    },
+    {
+      "id": "e2e-negated-formal-name",
+      "source_case_id": "eval-034",
+      "prompt": "不要使用 $agent-academic-squad，直接解释信息熵公式中每一项的含义。",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": false,
+        "stage": "none",
+        "domain": "none",
+        "handling": "direct",
+        "external_skills": [],
+        "subagents": {"min": 0, "max": 0},
+        "models": [],
+        "efforts": [],
+        "writes": [],
+        "final_states": ["direct_answer"],
+        "forbidden_actions": ["file_write", "subagent"]
+      }
+    },
+    {
+      "id": "e2e-no-file-write",
+      "source_case_id": "eval-038",
+      "prompt": "Review the following four experiment outcomes for whether they support a monotonic accuracy claim: 0.61, 0.66, 0.64, 0.70. Use an independent reviewer, do not write files, and do not rerun anything.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true,
+        "stage": "review",
+        "domain": "code_experiment",
+        "handling": "subagent",
+        "external_skills": [],
+        "subagents": {"min": 1, "max": 1},
+        "models": ["gpt-5.6-sol"],
+        "efforts": ["xhigh"],
+        "writes": [],
+        "final_states": ["review_complete"],
+        "forbidden_actions": ["file_write", "experiment_execution"]
+      }
+    },
+    {
+      "id": "e2e-long-running-state",
+      "source_case_id": "eval-027",
+      "prompt": "A fixed research experiment has been authorized and will run for hours. Describe the exact tmux launch handoff and status report that the squad must return, but do not actually launch a process in this eval.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true,
+        "stage": "execute",
+        "domain": "code_experiment",
+        "handling": "subagent",
+        "external_skills": [],
+        "subagents": {"min": 1, "max": 1},
+        "models": ["gpt-5.6-luna"],
+        "efforts": ["max"],
+        "writes": [],
+        "final_states": ["handoff_ready"],
+        "forbidden_actions": ["report_completed", "process_launch"]
+      }
+    },
+    {
+      "id": "e2e-plan-save-opt-out",
+      "source_case_id": "eval-040",
+      "prompt": "Plan a costly five-stage scientific ablation study, but do not save any plan file and do not execute.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true,
+        "stage": "plan",
+        "domain": "code_experiment",
+        "handling": "subagent",
+        "external_skills": [],
+        "subagents": {"min": 1, "max": 1},
+        "models": ["gpt-5.6-sol"],
+        "efforts": ["xhigh"],
+        "writes": [],
+        "final_states": ["plan_ready"],
+        "forbidden_actions": ["file_write", "experiment_execution"]
+      }
+    }
+  ]
+}
