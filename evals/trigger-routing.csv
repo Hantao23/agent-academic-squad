@@ -52,5 +52,5 @@ eval-050,implicit,true,true,plan,code_experiment,subagent,,plan_only|temporary_p
 eval-051,implicit,true,true,plan,code_experiment,subagent,grilling,read_only|no_file_write|one_round_blocker_batch,"设计这项昂贵实验前，我必须决定数据范围、主指标和算力预算；这些当前都能独立回答。调用 grilling，把所有当前阻塞问题一次性批量问完，每题给出建议和影响，然后停止等待，不要规划、执行或写文件。"
 eval-052,shortcut,true,true,plan,code_experiment,subagent,,plan_only|no_plan_save,"小分队派一个子代理，为已定位的单文件研究脚本参数重命名列一个简短三步计划；不要执行、不要保存。"
 eval-053,shortcut,true,true,plan,code_experiment,subagent,,plan_only|no_plan_save,"小分队派一个子代理，规划一个中等复杂度的研究代码修改：调整两个相关模块及相应测试，接口和目标已明确，不涉及架构决策或高成本实验；不要执行、不要保存。"
-eval-054,shortcut,true,true,review,code_experiment,subagent,,read_only|temporary_review,"小分队审查这组科研代码与实验日志，逐项保留严重问题、精确证据位置和复现条件；内容较长时自动保存审查报告，不修改项目文件。"
-eval-055,shortcut,true,true,execute,code_experiment,subagent,,read_only|temporary_handoff|long_running,"小分队根据正在运行的实验状态、日志路径、已接受决定和恢复命令整理一份可续接的详细交接说明并自动保存；不要停止或修改实验。"
+eval-054,shortcut,true,true,review,code_experiment,subagent,,read_only|temporary_review,"小分队审查这组科研代码与实验日志，逐项保留严重问题、精确证据位置和复现条件；这份报告之后要逐项处理，不修改项目文件。"
+eval-055,shortcut,true,true,execute,code_experiment,subagent,,read_only|temporary_handoff|long_running,"小分队根据正在运行的实验状态、日志路径、已接受决定和恢复命令整理一份供下一轮继续工作的详细交接说明；不要停止或修改实验。"
