@@ -75,6 +75,11 @@ def main() -> int:
                 fail(f"{prefix}: invalid domain")
             if row["expected_handling"] not in ALLOWED_HANDLING:
                 fail(f"{prefix}: invalid handling")
+            explicit_token = "$agent-academic-squad" in row["prompt"]
+            if row["category"] == "explicit" and not explicit_token:
+                fail(f"{prefix}: explicit case must invoke $agent-academic-squad")
+            if row["category"] != "explicit" and explicit_token:
+                fail(f"{prefix}: only explicit cases may invoke $agent-academic-squad")
             constraints = set(row["constraints"].split("|"))
             if not constraints <= ALLOWED_CONSTRAINTS:
                 fail(f"{prefix}: invalid constraint")
