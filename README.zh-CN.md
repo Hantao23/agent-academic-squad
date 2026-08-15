@@ -51,6 +51,7 @@ flowchart TD
 - 主模型先判断哪些对话内容需要保留，再选择性继承最近对话或摘录关键信息，并补充中立、可核验的文件与证据索引；
 - 学术小分队一旦判定为长计划，就会自动保存忠实的 Markdown，但计划文件和聊天都不套用统一模板；
 - 管理型缓存只拥有小分队新生成的辅助文本；项目文件和外部 Skill 产物留在原获授权位置，计划只引用路径而不复制；
+- 当多个当前可回答的用户决策确实阻塞任务时，小分队可以调用一次 `grilling`，把第一层 frontier 连同建议批量返回，然后停止等待；单个阻塞直接询问；
 - 规划请求只返回计划，不在同一轮偷偷执行；
 - 审查任务默认只报告问题，不擅自修改产物；
 - 小任务由主模型直接回答，不为“使用多代理”而使用多代理。
@@ -124,7 +125,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供50条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供18条核心富 E2E，覆盖宿主加载与按范围路由分离、规划路由与实际代理、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖、非学术显式交办、项目产物归属和临时产物。独立的两条 `evals/nature-integration-cases.json` 用于验证真实 Nature Skill 调用，不让普通 E2E 依赖外部 Skill 安装。
+`evals/trigger-routing.csv` 提供51条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供18条核心富 E2E，覆盖宿主加载与按范围路由分离、规划路由与实际代理、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖、非学术显式交办、项目产物归属和临时产物。独立可选集包含两条 Nature 集成案例和一条 `grilling` 批量提问案例，因此普通 E2E 不依赖这些外部 Skill。
 
 其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
 
@@ -133,6 +134,7 @@ python3 scripts/validate_eval_cases.py
 python3 -m unittest discover -s tests -v
 python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
+python3 scripts/run_e2e_evals.py --manifest evals/grilling-integration-cases.json --dry-run
 ```
 
 只有 Codex CLI 凭据有效时才运行真实、隔离的 JSONL 烟雾评测：
@@ -155,6 +157,15 @@ runner 只把 `SKILL.md`、UI 元数据、运行时参考以及计划缓存/Rada
 ```bash
 python3 scripts/run_e2e_evals.py \
   --manifest evals/nature-integration-cases.json \
+  --external-skill-root "$HOME/.agents/skills" \
+  --strict
+```
+
+安装了 `grilling` 后，可以运行一轮式阻塞澄清集成案例：
+
+```bash
+python3 scripts/run_e2e_evals.py \
+  --manifest evals/grilling-integration-cases.json \
   --external-skill-root "$HOME/.agents/skills" \
   --strict
 ```
@@ -205,7 +216,9 @@ $agent-academic-squad 找一个子代理精读这篇论文，再由另一个执�
 不要先规划，直接执行。
 ```
 
-## 外部学术 Skills
+## 外部 Skills
+
+当多个相互关联、必须由用户决定且当前可以同时回答的阻塞项出现时，小分队可以调用一次独立安装的 `grilling`。它把当前 frontier 连同建议一次性批量返回后停止；单个简单问题、可自行调查的事实或自动多轮追问不会触发它。
 
 论文类子任务可以继续调用专门的外部 Skill，例如：
 
@@ -225,6 +238,8 @@ $agent-academic-squad 找一个子代理精读这篇论文，再由另一个执�
 
 Nature Skills 采用 [Apache License 2.0](https://github.com/Yuan1z0825/nature-skills/blob/main/LICENSE)。本仓库仅提供面向这些外部 Skills 的任务调度和路由规则，不包含或重新发布其实现；安装、使用与再分发相关能力时，请以 Nature Skills 上游仓库为准。
 
+一轮式阻塞澄清路线建立在 Matt Pocock Skills 仓库提供的外部 [`grilling` Skill](https://github.com/mattpocock/skills/tree/main/skills/productivity/grilling) 之上。其当前上游工作流支持在每轮批量询问整个已解锁 frontier，并采用 [MIT License](https://github.com/mattpocock/skills/blob/main/LICENSE)。本仓库只提供路由和“一轮后停止”的约束，不重新发布其实现。
+
 ## 仓库结构
 
 ```text
@@ -238,10 +253,11 @@ agent-academic-squad/
 ├── evals/trigger-routing.csv         # 触发与路由回归案例
 ├── evals/e2e-cases.json              # 核心 E2E 预期
 ├── evals/nature-integration-cases.json # 可选 Nature 集成集
+├── evals/grilling-integration-cases.json # 可选一轮式 grilling 集成集
 ├── evals/receipt-schema.json         # 结构化自述 schema
 ├── evals/fixtures/                   # 真实读写 E2E fixture
 ├── references/routing.md            # 模型与推理强度路由
-├── references/external-skills.md    # 外部学术 Skill 映射
+├── references/external-skills.md    # 外部 Skill 映射
 ├── scripts/plan_cache.py             # 临时计划路径与安全清理
 ├── scripts/radar_snapshot.py         # 可选的 Codex Radar 只读快照
 ├── scripts/validate_eval_cases.py    # Eval 数据确定性校验

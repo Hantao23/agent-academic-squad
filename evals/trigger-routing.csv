@@ -49,3 +49,4 @@ eval-047,formal,true,false,none,none,direct,,formal_literal_context|no_file_writ
 eval-048,formal,true,true,plan,general,subagent,,plan_only|no_plan_save|explicit_general,"$agent-academic-squad 规划一次涉及设计、开发、数据迁移和上线交接的复杂网站迁移，只返回计划，不执行也不保存文件。"
 eval-049,shortcut,true,true,review,general,subagent,,read_only|no_file_write|explicit_general,"小分队帮我独立审查这份跨团队产品发布方案的依赖、回滚和遗漏，只报告问题，不修改文件。"
 eval-050,implicit,true,true,plan,code_experiment,subagent,,plan_only|temporary_plan|project_artifact_boundary,"根据四个已有实验目录制定后续复现实验计划并自动保存计划；只引用原始路径，不复制、移动、改写或缓存已有配置、数据、日志和结果。"
+eval-051,implicit,true,true,plan,code_experiment,subagent,grilling,read_only|no_file_write|one_round_blocker_batch,"设计这项昂贵实验前，我必须决定数据范围、主指标和算力预算；这些当前都能独立回答。调用 grilling，把所有当前阻塞问题一次性批量问完，每题给出建议和影响，然后停止等待，不要规划、执行或写文件。"

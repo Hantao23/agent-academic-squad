@@ -1,8 +1,10 @@
-# External academic skills
+# External skills
 
 Treat the subagent model as the task owner and the external skill as its workflow and tool guide.
 
 The `nature-*` workflows referenced below are provided by [Yuan1z0825/nature-skills](https://github.com/Yuan1z0825/nature-skills) under the [Apache License 2.0](https://github.com/Yuan1z0825/nature-skills/blob/main/LICENSE). This file defines squad routing only and does not redistribute their implementations.
+
+The `grilling` workflow is provided by [mattpocock/skills](https://github.com/mattpocock/skills/tree/main/skills/productivity/grilling) under the [MIT License](https://github.com/mattpocock/skills/blob/main/LICENSE). Upstream supports asking every currently unblocked frontier question in one batch per round. This repository references that separately installed workflow and does not redistribute it.
 
 ## Dispatch rules
 
@@ -10,7 +12,13 @@ The `nature-*` workflows referenced below are provided by [Yuan1z0825/nature-ski
 - Name the exact installed skill in the assignment and require the subagent to read its complete `SKILL.md` before acting.
 - Follow the external skill's pause conditions and output contract. The user's instructions still take priority.
 - Do not invoke skills outside the core list below unless the user explicitly requests one for the current task.
-- Do not invoke an external skill when the model can complete a bounded code, experiment, or mathematics task without a specialized workflow.
+- Do not invoke an external skill when the model can complete a bounded task without a specialized workflow.
+
+## One-round blocker clarification
+
+Use `grilling` only when several material decisions must come from the user, the decisions are all on the current frontier, and making assumptions could change validity, cost, scope, or an important artifact. Resolve inspectable facts first. Ask a single blocker directly.
+
+Assign one read-only Sol high subagent. Tell it to read the complete installed `grilling/SKILL.md`, then apply only the first-frontier batch behavior: return every currently answerable decision as one numbered batch, include its recommended answer and material consequences, exclude downstream questions, and stop without interacting with the user, writing files, planning, or executing. The dispatcher returns the batch and waits. Do not call `grilling` again for that task unless the user explicitly requests another round.
 
 ## Core routes
 

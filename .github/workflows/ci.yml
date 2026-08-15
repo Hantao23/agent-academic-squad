@@ -24,6 +24,7 @@ jobs:
         run: |
           python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
           python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
+          python3 scripts/run_e2e_evals.py --manifest evals/grilling-integration-cases.json --dry-run
       - name: Check Skill frontmatter
         run: |
           python3 - <<'PY'

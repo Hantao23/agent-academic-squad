@@ -51,6 +51,7 @@ Core principles:
 - The dispatcher selects relevant conversation context and adds neutral, verifiable artifact and evidence indexes instead of copying the entire conversation.
 - Substantial plans are saved automatically as faithful Markdown artifacts, but neither the file nor chat is forced into a universal template.
 - Managed persistence owns only squad-generated auxiliary text. Project files and external-skill outputs stay in their original authorized locations and are referenced by path rather than copied into the cache.
+- When several currently answerable user decisions genuinely block progress, the squad may use `grilling` once to return the whole first frontier as one batch with recommendations, then stop and wait. A single blocker is asked directly.
 - A planning request returns a plan and stops. It does not silently start execution.
 - A review request reports findings and does not modify artifacts unless the user also asks for changes.
 - Small tasks are answered directly; the skill does not use multiple agents for their own sake.
@@ -124,7 +125,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 50 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 18 core cases for planned versus runtime routes, host loading versus scope-aware routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, project-artifact ownership, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
+`evals/trigger-routing.csv` contains 51 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 18 core cases for planned versus runtime routes, host loading versus scope-aware routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, project-artifact ownership, and temporary artifacts. Separate optional suites contain two Nature integration cases and one `grilling` batch-question case, so ordinary E2E does not depend on those external installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
@@ -133,6 +134,7 @@ python3 scripts/validate_eval_cases.py
 python3 -m unittest discover -s tests -v
 python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
+python3 scripts/run_e2e_evals.py --manifest evals/grilling-integration-cases.json --dry-run
 ```
 
 Run real, isolated JSONL smoke evals only when the Codex CLI has valid credentials:
@@ -155,6 +157,15 @@ Run the optional Nature integration suite only when the external skills are inst
 ```bash
 python3 scripts/run_e2e_evals.py \
   --manifest evals/nature-integration-cases.json \
+  --external-skill-root "$HOME/.agents/skills" \
+  --strict
+```
+
+Run the optional one-round blocker integration case when `grilling` is installed:
+
+```bash
+python3 scripts/run_e2e_evals.py \
+  --manifest evals/grilling-integration-cases.json \
   --external-skill-root "$HOME/.agents/skills" \
   --strict
 ```
@@ -201,7 +212,9 @@ Do not use Luna for this task; use Sol xhigh for search as well.
 Do not plan first. Execute directly.
 ```
 
-## External academic skills
+## External skills
+
+For several related user-decision blockers that are answerable at the same time, the squad can call the separately installed `grilling` skill once. It returns the whole current frontier as one recommended batch and stops; it is not used for one simple question, inspectable facts, or automatic multi-round interrogation.
 
 Paper-related subtasks can use separately installed academic skills, including:
 
@@ -221,6 +234,8 @@ The `nature-*` routes in this repository build on the external academic workflow
 
 Nature Skills is licensed under the [Apache License 2.0](https://github.com/Yuan1z0825/nature-skills/blob/main/LICENSE). This repository provides routing rules for those separately installed skills; it does not include or redistribute their implementations. Refer to the upstream repository for installation, use, and redistribution terms.
 
+The one-round blocker route builds on the external [`grilling` skill](https://github.com/mattpocock/skills/tree/main/skills/productivity/grilling) maintained in Matt Pocock's Skills repository. Its current upstream workflow supports batching the entire unblocked frontier in each round and is licensed under the [MIT License](https://github.com/mattpocock/skills/blob/main/LICENSE). This repository provides only routing and one-round constraints; it does not redistribute the implementation.
+
 ## Repository structure
 
 ```text
@@ -234,10 +249,11 @@ agent-academic-squad/
 ├── evals/trigger-routing.csv        # Trigger and routing regression cases
 ├── evals/e2e-cases.json             # Core E2E expectations
 ├── evals/nature-integration-cases.json # Optional Nature integration suite
+├── evals/grilling-integration-cases.json # Optional one-round grilling integration
 ├── evals/receipt-schema.json        # Structured self-report schema
 ├── evals/fixtures/                  # Real read/write E2E fixture trees
 ├── references/routing.md            # Model and effort routing
-├── references/external-skills.md    # External academic skill mapping
+├── references/external-skills.md    # External skill mapping
 ├── scripts/plan_cache.py             # Temporary plan allocation and cleanup
 ├── scripts/radar_snapshot.py         # Optional read-only Codex Radar snapshot
 ├── scripts/validate_eval_cases.py    # Deterministic eval-data validation

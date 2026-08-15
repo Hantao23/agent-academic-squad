@@ -17,6 +17,7 @@ DATASET = ROOT / "evals" / "trigger-routing.csv"
 E2E_MANIFESTS = (
     ROOT / "evals" / "e2e-cases.json",
     ROOT / "evals" / "nature-integration-cases.json",
+    ROOT / "evals" / "grilling-integration-cases.json",
 )
 RECEIPT_SCHEMA = ROOT / "evals" / "receipt-schema.json"
 REQUIRED_COLUMNS = {
@@ -34,7 +35,7 @@ ALLOWED_CONSTRAINTS = {
     "temporary_artifacts", "workspace_read_only", "unavailable_model",
     "single_writer", "no_plan_save", "formal_literal_context", "formal_opt_out",
     "sensitive_no_store", "explicit_general", "proportional_direct",
-    "project_artifact_boundary",
+    "project_artifact_boundary", "one_round_blocker_batch",
 }
 NEGATED_SHORTCUT_PHRASES = (
     "不用小分队", "不要用小分队", "别用小分队", "不要使用小分队",

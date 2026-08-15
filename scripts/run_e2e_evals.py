@@ -65,6 +65,7 @@ KNOWN_EXTERNAL_SKILLS = (
     "nature-downloader",
     "nature-figure",
     "nature-response",
+    "grilling",
 )
 FORBIDDEN_ACTIONS = {
     "file_write",
@@ -87,7 +88,7 @@ most specific `role_kind` for every route; put proposed work only in
 `planned_routes`. `host_loaded` means the host loaded this Skill;
 `routing_used` means the request passed either implicit academic scope or
 explicit opt-in and the Skill's routing behavior was actually used. Use
-`blocked` and explain why when a
+`blocked` and explain why when required user decisions are still pending or a
 requested model or capability is unavailable. This receipt is a self-report
 and will be checked against the JSONL trace and workspace artifacts.
 """.strip()

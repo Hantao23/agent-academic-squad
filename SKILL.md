@@ -25,9 +25,9 @@ Use orchestration, structure, context, and output that are appropriate and suffi
 ## Load routing rules
 
 - Read [references/routing.md](references/routing.md) before choosing a subagent model or reasoning effort.
-- Read [references/external-skills.md](references/external-skills.md) before assigning an installed academic skill to a subagent.
+- Read [references/external-skills.md](references/external-skills.md) before assigning an installed external skill to a subagent.
 - Run `python3 scripts/radar_snapshot.py` only under the Radar conditions defined in that reference.
-- Invoke only the core academic skills listed in `external-skills.md` unless the user explicitly requests another installed skill. Do not reproduce those domain workflows here.
+- Invoke only the core external skills listed in `external-skills.md` unless the user explicitly requests another installed skill. Do not reproduce those workflows here.
 
 ## Respect command priority
 
@@ -70,6 +70,14 @@ Use judgment rather than converting these signals into task cards, scores, gates
 Before delegating, perform a lightweight dispatch pass and reuse facts already present in the active context. When location is still needed, use only a few targeted read-only lookups to find the relevant artifacts, terminology, and decision criteria. Treat roughly 30--60 seconds as a reminder to stay lightweight, not a quota or hard timeout; widen the pass only when the handoff would otherwise be unusable. Do not duplicate the subagent's substantive investigation.
 
 Answer directly without a subagent when the task is bounded and this routing layer offers no material benefit, unless the user explicitly requested delegation or independent review.
+
+## Clarify genuine user-decision blockers once
+
+- Find facts from the conversation, artifacts, environment, or tools instead of asking the user. Ask one straightforward decision directly when it does not justify delegation.
+- When several related user decisions materially block safe or valid progress and their prerequisites are already settled, assign one read-only Sol high subagent to the installed `grilling` skill. Do not invoke it merely because a task is difficult or uncertain.
+- Override the external skill's normal multi-round session for this route: request only the current first frontier, combine all of its questions into one numbered batch, attach a recommended answer and material consequence to each, and stop. Exclude questions that depend on answers from the same batch.
+- Return that complete batch to the user without adding a second questionnaire, do not plan or execute while awaiting the answers, and do not save the batch as an artifact. Do not invoke `grilling` again for the same task unless the user explicitly asks to continue grilling.
+- After the user answers, resume normal routing from those decisions. If a new downstream blocker remains, state it plainly rather than silently choosing a consequential default or starting another grilling round.
 
 ## Delegate proportionately
 

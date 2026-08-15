@@ -1,0 +1,21 @@
+{
+  "suite": "grilling-integration",
+  "cases": [
+    {
+      "id": "integration-grilling-one-round-batch",
+      "source_case_id": "eval-051",
+      "required_external_skills": ["grilling"],
+      "prompt": "Before this costly research experiment can be designed, I must choose the dataset scope, primary metric, and compute budget; all three decisions are answerable now. Use the installed grilling skill through one read-only subagent. Return every current-frontier question together in one numbered batch, with a recommendation and material consequences for each, then stop and wait for my answers. Do not ask a second round, plan the experiment, execute anything, or write files.",
+      "sandbox": "read-only",
+      "expected": {
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["high"], "required_efforts": ["high"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": ["grilling"], "writes": [],
+        "final_states": ["blocked"], "forbidden_actions": ["file_write", "experiment_execution", "report_completed"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes", "trace_external_skills"]
+      }
+    }
+  ]
+}

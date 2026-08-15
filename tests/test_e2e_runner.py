@@ -87,6 +87,17 @@ def observations(receipt_value: dict[str, object] | None, **overrides: object) -
 
 
 class E2ERunnerTests(unittest.TestCase):
+    def test_grilling_external_skill_trace_is_detected(self) -> None:
+        trace = "\n".join((
+            '{"type":"thread.started","thread_id":"t1"}',
+            '{"type":"item.completed","item":{"type":"skill_call","skill":"grilling"}}',
+            '{"type":"turn.completed","usage":{"input_tokens":1}}',
+        ))
+        events, invalid = run_e2e_evals.parse_jsonl(trace)
+        observed = run_e2e_evals.event_observations(events, [])
+        self.assertEqual(invalid, [])
+        self.assertIn("grilling", observed["invoked_external_skills_trace"])
+
     def test_explicit_general_route_is_semantically_valid(self) -> None:
         value = receipt(domain="general")
         self.assertEqual(run_e2e_evals.receipt_semantic_errors(value), [])
