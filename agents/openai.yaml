@@ -1,6 +1,6 @@
 interface:
   display_name: "agent学术小分队"
-  short_description: "简单任务直答，复杂学术任务按需调度规划、执行与审查子代理"
+  short_description: "仅限学术任务：简单问题直答，复杂任务按需调度子代理"
   default_prompt: "Use $agent-academic-squad to route this academic task to the right planning, execution, or review subagent and return the result for my review."
 
 policy:
