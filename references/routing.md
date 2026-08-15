@@ -126,7 +126,10 @@ Interpret the feeds conservatively:
 - Ignore benchmark points with fewer than 30 weighted samples and community scores with fewer than 20 ratings when making a default-route decision.
 - Do not infer mathematics, literature-reading, or writing quality from a code benchmark.
 - Prefer the pinned route when live evidence is missing, irrelevant, or statistically weak.
+- Ignore a feed that the snapshot marks stale or whose freshness cannot be established for a time-sensitive decision.
 - If a live degradation signal changes a default route, disclose the changed assignment to the user.
+
+The snapshot helper validates required container shapes, selects the latest fast run by its explicit timestamp rather than response order, fetches feeds concurrently, and reports freshness. These checks make Radar safer to inspect; they do not promote it above the static routes.
 
 Public feeds:
 

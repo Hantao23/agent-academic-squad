@@ -2,7 +2,7 @@
 
 一个面向 Codex 的轻量学术任务调度 Skill。
 
-它只面向明确的学术任务，并默认按需参与：先确认任务属于科研、科学实验、数学理论与算法研究、学术文献或论文工作，再由当前主模型做轻量判断。简单问题直接回答；只有任务确实需要更多调查、工具、外部 Skill、独立判断或多阶段工作时，才启用调度并委派合适的子代理完成规划、执行与审查。
+它只面向明确的学术任务，并默认按需参与：先确认任务属于科研、科学实验、数学理论与算法研究、学术文献或论文工作，再判断委派是否能带来实质收益。读取一个文件、网页或调用一次工具不会自动触发；只有需要规划、协调、广泛材料处理、专业 Skill 组合或独立审查时，才启用调度。
 
 ## 它解决什么问题
 
@@ -41,7 +41,7 @@ flowchart TD
 - 学术领域是第一道硬门槛；普通软件或产品开发、无科研背景的日常代码、商业运营、一般写作、个人事务和常识问答不会隐式触发；
 - 不能只因任务出现“代码、数学、分析、写作、规划或审查”等词就认定为学术任务；学术背景不明确时保持不触发；
 - 允许隐式触发；当前会话的 `GPT-5.6 Sol medium` 足以承担轻量分诊，不要求先把主模型切到 xhigh；
-- 只有低风险、上下文已齐、无需读文件或论文、无需工具或外部 Skill、无需独立复核，并且约两分钟内可以完整回答的问题才不启用小分队；任一条件不满足即可按需触发；
+- 单个文件、摘要、短脚本、小表格、段落润色或一次工具调用本身不足以触发；只有调度确实能改善可靠性时才启用；
 - 用户指定的模型和推理强度永远优先于默认路由；
 - 默认只派一个子代理，只有真正独立的工作才并行；
 - 主模型先判断哪些对话内容需要保留，再选择性继承最近对话或摘录关键信息，并补充中立、可核验的文件与证据索引；
@@ -56,13 +56,20 @@ flowchart TD
 
 只要学术小分队已经触发并将规划判定为实质性长计划，就会自动保存，无论 Skill 是显式调用还是隐式触发，也不需要用户再补充“保存计划”。用户可以明确说“不要保存”关闭本次写入。
 
-判定完成后，主模型应立即告知计划保存位置，并说明本轮只规划、不执行。用户指定的保存路径始终优先；未指定时保存到：
+自动保存分为临时缓存和永久产物：
+
+- 未明确要求永久保存时，计划进入管理型缓存，默认保留 30 天；
+- 明确说“保存、保留、永久保存”或指定路径时，计划永久保存；
+- 临时计划可在过期前通过“永久保留这个计划”复制到持久路径；
+- 判定完成后，主模型立即说明绝对路径、临时或永久状态、保留期限，以及本轮只规划、不执行。
+
+临时缓存默认位于：
 
 ```text
-<codex-home>/agent-academic-squad/plans/<YYYY-MM-DD>/<HHMMSS>-<task-slug>.md
+${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 ```
 
-`<codex-home>` 从当前 Skill 的安装位置解析，因此该规则可用于不同用户和主机，不依赖固定的 home 路径。
+`scripts/plan_cache.py` 在分配新路径时执行惰性清理，只删除该目录中符合自身命名规则、超过 30 天的普通文件；它不使用 `/tmp`、不跟随符号链接，也不删除缓存根目录之外的内容。用户未指定路径的永久计划保存到当前工作区的 `.agents/plans/`。
 
 规划文件固定包含以下章节：
 
@@ -99,15 +106,38 @@ flowchart TD
 
 ## 安装
 
-将仓库克隆到 Codex Skills 目录：
+当前官方 Codex 文档推荐用户级 Skill 放在 `$HOME/.agents/skills`，仓库级 Skill 放在项目的 `.agents/skills`：
 
 ```bash
-git clone https://github.com/Hantao23/agent-academic-squad.git ~/.codex/skills/agent-academic-squad
+git clone https://github.com/Hantao23/agent-academic-squad.git "$HOME/.agents/skills/agent-academic-squad"
+```
+
+```bash
+git clone https://github.com/Hantao23/agent-academic-squad.git .agents/skills/agent-academic-squad
+```
+
+部分 Codex Desktop 或旧版 Codex 环境仍从 `$CODEX_HOME/skills`（通常为 `~/.codex/skills`）发现用户 Skill；当前环境采用该位置：
+
+```bash
+git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$HOME/.codex}/skills/agent-academic-squad"
 ```
 
 随后重启 Codex，或开启一个新任务让 Skill 清单重新加载。
 
 该 Skill 依赖支持子代理调度的 Codex 环境。`scripts/radar_snapshot.py` 只使用 Python 3 标准库；只有在模型选择确实可能受当前数据影响时才会访问公开的 Codex Radar 数据源。
+
+## Evals
+
+`evals/trigger-routing.csv` 提供正例、负例和边界案例，覆盖是否触发、阶段、领域、委派、外部 Skill、只读约束和用户模型覆盖。先运行确定性数据校验：
+
+其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。
+
+```bash
+python3 scripts/validate_eval_cases.py
+python3 -m unittest discover -s tests -v
+```
+
+真实触发回归应在新的隔离任务中使用 `codex exec --json --ephemeral` 运行这些 prompts，并保存 trace。数据集校验不会冒充真实模型评估；它只保证案例格式、覆盖面和预期标签一致。
 
 ## 使用示例
 
@@ -164,11 +194,20 @@ Nature Skills 采用 [Apache License 2.0](https://github.com/Yuan1z0825/nature-s
 ```text
 agent-academic-squad/
 ├── SKILL.md                         # 主工作流
+├── LICENSE                          # MIT License
 ├── agents/openai.yaml               # Codex 界面元数据
+├── evals/trigger-routing.csv         # 触发与路由回归案例
 ├── references/routing.md            # 模型与推理强度路由
 ├── references/external-skills.md    # 外部学术 Skill 映射
-└── scripts/radar_snapshot.py        # 可选的 Codex Radar 只读快照
+├── scripts/plan_cache.py             # 临时计划路径与安全清理
+├── scripts/radar_snapshot.py         # 可选的 Codex Radar 只读快照
+├── scripts/validate_eval_cases.py    # Eval 数据确定性校验
+└── tests/                            # 缓存和 Radar 单元测试
 ```
+
+## License
+
+本项目采用 [MIT License](LICENSE)。外部 `nature-*` Skills 仍适用各自上游许可证。
 
 ## English summary
 

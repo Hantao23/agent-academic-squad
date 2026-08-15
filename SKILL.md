@@ -1,6 +1,6 @@
 ---
 name: agent-academic-squad
-description: Academic-only, on-demand task routing for Codex. Implicitly use only for clearly scholarly or research work—科研代码与科学实验、数学理论与算法研究、文献检索与论文阅读、论文或学位论文写作、引用、科研绘图统计或同行评审—and only when it likely needs delegation, planning, artifact inspection, tools or an external academic skill, independent verification, several dependent steps, more than about two minutes, or a high-stakes scientific decision. Never implicitly use for generic software or product engineering, routine coding without research context, business or operations, everyday writing, personal tasks, or general questions; if academic context is ambiguous, leave it inactive. Explicit $agent-academic-squad invocation remains a user override.
+description: Academic-only routing for research code and experiments, mathematics and algorithms, literature, papers, and peer review. Implicitly use when an academic task materially benefits from delegation, plan-first execution, specialized academic skills, broad artifact processing, or independent review. Do not invoke for non-academic work or bounded academic questions the main model can reliably answer directly, even when they require one file, webpage, or tool call. Explicit $agent-academic-squad invocation overrides.
 ---
 
 # agent学术小分队
@@ -13,10 +13,10 @@ Act as the user's dispatcher, not as an organization or approval authority. Let 
 - Treat code as academic only when it is research code or directly supports a scientific experiment, simulation, algorithmic study, benchmark, dataset analysis, or scholarly claim. Generic application development, product engineering, infrastructure, automation, and routine repository maintenance are outside this skill even when technically difficult.
 - Do not infer academic scope merely because a task mentions code, mathematics, analysis, writing, planning, or review. If research or scholarly context is ambiguous, leave the skill inactive and let the main model handle the request normally; do not ask for academic framing solely to make this skill applicable.
 - Explicit `$agent-academic-squad` invocation is the user's override and activates the skill. Otherwise, delegation, planning, execution, review, or model-assignment wording activates it only after the academic gate passes.
-- For an academic request, leave the skill inactive when all of these are true: the task is bounded and low stakes; the decisive context is already present; no repository, file, paper, web, tool, or external-skill inspection is needed; no independent judgment or delegation would materially improve reliability; and the main model can give a complete answer in about two minutes.
-- Activate implicitly when any one of those conditions fails, including nontrivial proof or algorithm work, artifact-backed analysis, code or experiment work, literature workflows, multi-stage work, costly execution, or scientifically consequential review.
-- At the boundary, activate when delegation or a specialized academic skill is likely to improve reliability materially; otherwise answer directly. Keep this threshold intentionally modest rather than reserving the skill only for very large tasks.
-- If the host activates the skill for an apparently simple request, perform the lightweight routing pass and answer directly without spawning a subagent when the direct-answer conditions are in fact satisfied.
+- For implicit activation, require a material benefit from this routing layer. Material benefit exists when at least one applies: the user requests delegation or independent review; costly work should be planned before execution; several dependent deliverables or stages must be coordinated; broad code, experiment, dataset, or literature artifacts must be processed; a specialized academic skill must be combined with another stage; or a high-stakes scientific decision benefits from separate verification.
+- Do not treat reading one file, one paper or abstract, one webpage, one result table, or making one tool call as sufficient by itself. Let the main model directly handle bounded tasks such as explaining a concept, checking a short research script, summarizing one abstract, interpreting one small table, polishing one paragraph, or verifying one bibliographic item when it can do so reliably.
+- At the boundary, activate only when delegation or coordination is likely to improve reliability materially; otherwise answer directly. Keep this threshold modest, but do not use task duration or tool use alone as a proxy for benefit.
+- If the host activates the skill for an apparently bounded request, perform the lightweight routing pass and answer directly without spawning a subagent when no material benefit remains.
 
 ## Load routing rules
 
@@ -44,9 +44,9 @@ Classify the request by stage (`plan`, `execute`, or `review`) and domain (code/
 
 - For an explicit planning request, delegate planning, return the plan, and stop. Do not execute it in the same turn.
 - For an execution request with a previously accepted plan, execute that plan without replanning unless it is stale, impossible, or missing a decision that materially changes the result.
-- For an execution-looking request without a prior plan, estimate workload cost. Execute directly when it is manageable. Delegate planning and stop when workload is high.
+- For an execution-looking request without a prior plan, first decide whether the request itself is an accepted executable specification. A concrete target plus a named reference protocol or fixed parameters, authorized artifact scope, and no material unresolved choice is enough; execute it even when runtime is long. Otherwise execute directly when manageable, but delegate planning and stop when workload is high or a missing choice would materially change the experiment.
 - For an explicit `直接执行` or `不要规划` instruction, execute directly within the user's authorized scope even when the default would plan first.
-- For review, inspect and report only. Do not modify the reviewed artifact unless the user also asks for changes.
+- For review, inspect and report only. Do not modify the reviewed artifact unless the user also asks for changes. Before broad evidence extraction, fix the decisive criterion and distinguish final outcomes from intermediate diagnostics; then check coverage and contradictions before summarizing.
 
 Treat workload as high when any of these applies:
 
@@ -63,7 +63,7 @@ Use judgment rather than converting these signals into task cards, scores, gates
 
 Before delegating, perform a lightweight dispatch pass. Reuse facts already present in the active context. When location is still needed, spend about 30 seconds by default and no more than about 60 seconds or 3--5 read-only lookups finding the relevant artifacts, terminology, and decision criteria. Do not duplicate the subagent's substantive investigation.
 
-Answer directly without a subagent only when the direct-answer conditions above are all satisfied and the user did not explicitly request delegation or independent review.
+Answer directly without a subagent when the academic task is bounded and this routing layer offers no material benefit, unless the user explicitly requested delegation or independent review.
 
 ## Delegate minimally
 
@@ -86,15 +86,18 @@ Answer directly without a subagent only when the direct-answer conditions above 
 
 - Treat a delegated plan as substantial when faithful delivery requires exact commands or configuration, several dependent stages, explicit recovery or acceptance criteria, multiple decision branches, or enough detail that a chat-only summary would omit execution-critical information.
 - Whenever this skill is active and classifies a planning result as substantial, save the final plan automatically unless the user explicitly says not to save it. Apply this default to both explicit and implicit skill invocation; do not require an additional save instruction or confirmation.
-- Prefer a path explicitly provided by the user. Otherwise resolve `<codex-home>` from the installed skill location and use `<codex-home>/agent-academic-squad/plans/<YYYY-MM-DD>/<HHMMSS>-<task-slug>.md`.
-- Resolve `<codex-home>` as the parent of the `skills/` directory containing this installed skill; do not hardcode a host-specific home path. Create dated directories only when saving. Never overwrite an existing plan silently; use a new timestamp or an explicit revision suffix.
-- As soon as the task is classified as a substantial plan, tell the user that automatic saving is enabled, give the planned absolute path, and restate that planning does not start execution. Do not wait until the final response to disclose the artifact.
+- Treat a user-provided path or an explicit request to save, retain, or keep the plan permanently as durable storage. Prefer the provided path; otherwise use `<workspace-root>/.agents/plans/<timestamp>-<task-slug>.md`. If no workspace root is available, ask for a durable path instead of guessing.
+- Treat every other automatic save as temporary. Run `python3 scripts/plan_cache.py allocate --slug "<task-slug>"` from this skill directory and use the returned absolute path. The managed cache defaults to `${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/`, retains plans for 30 days, and lazily removes only expired regular files created under its own naming convention.
+- Never use `/tmp`, never follow symlinks during cleanup, and never delete outside the resolved managed cache root. Never overwrite an existing plan silently; allocate a new timestamped name.
+- This `/tmp` restriction applies only to automatic plan storage. It does not override a user's explicit request to place disposable experiment artifacts in a temporary directory.
+- As soon as the task is classified as a substantial plan, tell the user that automatic saving is enabled, give the planned absolute path, state whether it is temporary or durable, disclose the 30-day retention period for temporary plans, and restate that planning does not start execution. Do not wait until the final response to disclose the artifact.
+- If the user later asks to keep a temporary plan permanently, copy its normalized contents to the requested durable path or the workspace default and return the new path. Do not disable expiry on unrelated cache files.
 - Store the normalized final plan, not the subagent transcript or hidden reasoning. Preserve the objective, verified facts and source anchors, exact parameters, ordered dependencies, commands and configuration needed for execution, all input and output artifact paths, model assignments, every unresolved decision branch, validation, recovery, stop conditions, acceptance criteria, cost drivers, the complete material-risk list, and the statement that execution has not started.
 - Use these sections in every saved substantial plan, in this order and localized to the user's language: `Conclusion summary`; `Decisions required from the user`; `Verified facts and sources`; `Complete executable plan`; `Parameters, commands, and artifact paths`; `Validation, recovery, and stop conditions`; `Cost, risks, and model assignments`; `Execution status`. Keep the decisions section even when empty and state `None` explicitly.
 - Before replying, compare the saved plan with the subagent's final deliverable and restore any missing decision branch or execution-critical detail. Preserve all unresolved alternatives in both the file and chat; do not present only the recommended route or convert an unresolved choice into a default unless the user already authorized it.
 - Treat the plan file as a supplement to chat, never as a substitute. Even when a file exists, the chat response must include a self-contained description of the entire plan mainline in dependency order, every decision still required from the user with the options and consequences, the most material risks, the execution status, and a clickable absolute path. The mainline may be paraphrased rather than copied verbatim, but it must let the user understand the approach and decide whether to proceed without opening the file.
 - Detailed commands, long configuration blocks, and large validation tables may live primarily in the file only after their role and place in the mainline have been explained in chat. Do not shorten the chat merely because a file was created.
-- When the user opts out or the resolved path is not writable, return the faithful plan in chat instead of compressing it, and report that no plan file was saved.
+- When the user opts out, the cache helper fails, or the resolved path is not writable, return the faithful plan in chat instead of compressing it, and report that no plan file was saved.
 
 ## Return useful handoffs
 
@@ -121,6 +124,7 @@ For review, return prioritized findings with evidence and a recommendation. Do n
 
 ## Handle waits and failures
 
+- Distinguish `launched`, `running`, and `completed` for long-running experiments. When work is launched in `tmux` or another background runner, preserve the exact command, session or job identifier, log path, artifact path, and monitoring or re-entry command; verify that startup succeeded, and never report the experiment as completed merely because it was launched.
 - Treat a wait-window timeout as an observation, not a task failure. Continue waiting when the subagent is still running.
 - Retry a clearly transient tool, network, or malformed-response failure once.
 - Do not diagnose environment, permission, or network failures as model weakness.
