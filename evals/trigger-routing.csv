@@ -28,3 +28,7 @@ eval-026,explicit,true,plan,code_experiment,subagent,,plan_only|durable_plan,"$a
 eval-027,implicit,true,execute,code_experiment,subagent,,direct_execution|long_running,"使用 sample.bmp 按已有 reference_run 的生产流程完整复现实验；流程和参数沿用参考目录，没有未决项。运行会很久，请在 tmux 中启动并给出日志和状态查看方法。"
 eval-028,implicit,true,review,code_experiment,subagent,,read_only|workspace_read_only,"只读审查三个预实验数据集。先确定最终解码失败的判据，再按测序深度分别输出三张表，不修改任何实验文件。"
 eval-029,implicit,true,execute,code_experiment,subagent,,direct_execution|temporary_artifacts|workspace_read_only,"做一个条件故障注入实验：先核对历史失败输出的真实形态，再生成代表案例并验证文件能否打开。所有新产物只写临时目录，不改生产仓库。"
+eval-030,explicit,true,review,code_experiment,subagent,,read_only|workspace_read_only,"小分队帮我审查这三个实验目录，按测序深度汇总最终失败，不修改文件。"
+eval-031,explicit,true,plan,paper,subagent,,plan_only|temporary_plan,"这个交给小分队，只规划论文完整重构方案，不要执行。"
+eval-032,negative,false,none,none,direct,,none,"不用小分队，直接解释这个公式每一项的含义。"
+eval-033,negative,false,none,none,direct,,none,"我只是在讨论小分队这个名字是否合适，不是在下达学术任务。"

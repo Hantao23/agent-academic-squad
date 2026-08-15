@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -38,6 +39,28 @@ ALLOWED_CONSTRAINTS = {
     "temporary_artifacts",
     "workspace_read_only",
 }
+NEGATED_SQUAD_PHRASES = (
+    "不用小分队",
+    "不要用小分队",
+    "别用小分队",
+    "不要交给小分队",
+    "不交给小分队",
+)
+DISCUSSION_ONLY_PHRASES = (
+    "讨论小分队",
+    "关于小分队",
+    "小分队这个名字",
+    "小分队这个称呼",
+)
+
+
+def has_explicit_invocation(prompt: str) -> bool:
+    if "$agent-academic-squad" in prompt:
+        return True
+    if any(phrase in prompt for phrase in NEGATED_SQUAD_PHRASES + DISCUSSION_ONLY_PHRASES):
+        return False
+    stripped = prompt.lstrip()
+    return stripped.startswith("小分队") or bool(re.search(r"交给小分队(?:处理|来做|负责|审查|规划|执行|[，,:：。\s]|$)", prompt))
 
 
 def fail(message: str) -> None:
@@ -75,11 +98,11 @@ def main() -> int:
                 fail(f"{prefix}: invalid domain")
             if row["expected_handling"] not in ALLOWED_HANDLING:
                 fail(f"{prefix}: invalid handling")
-            explicit_token = "$agent-academic-squad" in row["prompt"]
-            if row["category"] == "explicit" and not explicit_token:
-                fail(f"{prefix}: explicit case must invoke $agent-academic-squad")
-            if row["category"] != "explicit" and explicit_token:
-                fail(f"{prefix}: only explicit cases may invoke $agent-academic-squad")
+            explicit_invocation = has_explicit_invocation(row["prompt"])
+            if row["category"] == "explicit" and not explicit_invocation:
+                fail(f"{prefix}: explicit case must use a recognized squad invocation")
+            if row["category"] != "explicit" and explicit_invocation:
+                fail(f"{prefix}: only explicit cases may use a recognized squad invocation")
             constraints = set(row["constraints"].split("|"))
             if not constraints <= ALLOWED_CONSTRAINTS:
                 fail(f"{prefix}: invalid constraint")
@@ -99,7 +122,9 @@ def main() -> int:
         if missing_categories:
             fail(f"missing categories: {sorted(missing_categories)}")
         if not any("$agent-academic-squad" in row["prompt"] for row in rows):
-            fail("dataset needs an explicit invocation case")
+            fail("dataset needs a formal explicit invocation case")
+        if not any(row["prompt"].lstrip().startswith("小分队") for row in rows):
+            fail("dataset needs a natural-language explicit invocation case")
 
     except (OSError, ValueError) as exc:
         print(f"validation failed: {exc}", file=sys.stderr)
