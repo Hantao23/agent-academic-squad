@@ -40,14 +40,16 @@ flowchart TD
 
 Core principles:
 
+- Use the least orchestration, structure, context, and output that the task needs. Simple questions receive simple answers; complexity is added only when it improves the result.
 - Academic scope is a hard gate. Generic software engineering, business operations, everyday writing, personal tasks, and general questions do not implicitly activate the skill.
 - Words such as “code,” “mathematics,” “analysis,” “writing,” “planning,” or “review” do not prove academic scope.
 - Implicit activation is supported. A conversation running `GPT-5.6 Sol medium` can perform the lightweight dispatch check; the main model does not need to be switched to xhigh first.
 - A single file, abstract, short script, small table, paragraph edit, or one tool call is not sufficient unless delegation would materially improve reliability.
 - User-selected models and reasoning effort always override defaults.
 - One subagent is the default. Parallel agents are used only for genuinely independent work.
+- Multi-stage work tracks only dependencies that matter; agents are split by verifiable evidence or artifact boundaries, and disagreements are resolved from evidence rather than votes.
 - The dispatcher selects relevant conversation context and adds neutral, verifiable artifact and evidence indexes instead of copying the entire conversation.
-- Substantial plans are saved automatically as complete Markdown artifacts. The chat still explains the mainline and unresolved decisions.
+- Substantial plans are saved automatically as faithful Markdown artifacts, but neither the file nor chat is forced into a universal template.
 - A planning request returns a plan and stops. It does not silently start execution.
 - A review request reports findings and does not modify artifacts unless the user also asks for changes.
 - Small tasks are answered directly; the skill does not use multiple agents for their own sake.
@@ -75,20 +77,9 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 
 Automatic persistence never stores raw credentials, tokens, private keys, or full conversation transcripts by default. User-marked sensitive, confidential, or `do not store` material stays in chat unless the user supplies an authorized destination.
 
-Every saved substantial plan contains these sections:
+A saved plan has no mandatory headings or section order. It uses the structure that best fits the task and includes only material information: normally the objective and mainline, plus relevant evidence, dependencies, parameters, commands, artifact paths, unresolved choices, validation, recovery, costs, risks, or model assignments. Inapplicable sections are omitted rather than filled with placeholders.
 
-1. Conclusion summary
-2. Decisions required from the user
-3. Verified facts and sources
-4. Complete executable plan
-5. Parameters, commands, and artifact paths
-6. Validation, recovery, and stop conditions
-7. Cost, risks, and model assignments
-8. Execution status
-
-The dispatcher may remove investigation narration, exact repetition, and demonstrably irrelevant material. It must preserve unresolved branches, parameters, dependencies, commands, artifact paths, acceptance criteria, costs, risks, and model assignments.
-
-The plan file supplements the chat; it never replaces it. Even when a file is saved, the response must describe the full execution mainline, all unresolved user decisions and their consequences, material risks, execution status, and the absolute file path. Long commands and tables may live primarily in the file only after their role is explained in chat.
+The plan file supplements the chat without forcing duplication. The chat gives a proportional explanation of the route, decisions that actually require the user, material caveats, execution status, and the absolute file path. Detailed commands, configurations, and evidence tables can remain in the file when repeating them would only add tokens.
 
 ## Default model routing
 
