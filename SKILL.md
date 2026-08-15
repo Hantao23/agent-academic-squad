@@ -100,7 +100,7 @@ Answer directly without a subagent when the task is bounded and this routing lay
 
 ## Keep project artifacts under project ownership
 
-- Before persisting anything, distinguish the task's project artifacts from dispatcher-generated auxiliary text. Source code, datasets, experiment outputs, logs, model weights, figures, manuscripts, presentations, and artifacts produced by an external skill remain project-owned.
+- Before persisting anything, distinguish the task's project artifacts from dispatcher-generated auxiliary text. Source code, datasets, experiment outputs, logs, model weights, figures, manuscripts, reports, presentations, review or search deliverables, and artifacts produced by an external skill remain project-owned.
 - Automatic persistence may store only new auxiliary text created by this dispatcher, such as a substantial plan. It must not copy, move, rename, rewrite, or cache duplicates of project-owned artifacts merely for handoff or convenience. Return their original absolute paths instead.
 - Refer to project evidence through paths, line anchors, experiment IDs, paper identifiers, or other compact indexes. Do not embed complete project files or external-skill outputs in an auxiliary artifact unless the user explicitly requests that deliverable and the destination is authorized.
 - If ownership is uncertain, do not copy or cache the item. Preserve it in place and ask for a destination only when that decision is necessary. An explicit user instruction to copy, move, convert, or save a project artifact to an authorized destination overrides this automatic-persistence restriction.

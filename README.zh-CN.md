@@ -50,7 +50,7 @@ flowchart TD
 - 默认只派一个子代理，只有真正独立的工作才并行；
 - 多阶段任务只识别真正影响结果的依赖，子代理按可独立验证的证据或产物边界拆分，冲突依据证据处理而不是投票；
 - 主模型先判断哪些对话内容需要保留，再选择性继承最近对话或摘录关键信息，并补充中立、可核验的文件与证据索引；
-- 学术小分队一旦判定为长计划，就会自动保存忠实的 Markdown，但计划文件和聊天都不套用统一模板；
+- 学术小分队一旦判定为长计划，就会自动保存由调度器生成的辅助 Markdown，但计划文件和聊天都不套用统一模板；
 - 管理型缓存只拥有小分队新生成的辅助文本；项目文件和外部 Skill 产物留在原获授权位置，计划只引用路径而不复制；
 - 当多个当前可回答的用户决策确实阻塞任务时，小分队可以调用一次 `grilling`，把第一层 frontier 连同建议批量返回，然后停止等待；单个阻塞直接询问；
 - 规划请求只返回计划，不在同一轮偷偷执行；
@@ -59,11 +59,15 @@ flowchart TD
 
 完整规则见 [`SKILL.md`](SKILL.md)，模型选择见 [`references/routing.md`](references/routing.md)。
 
-## 规划产物
+## 项目产物与计划缓存
 
-只要学术小分队已经触发并将规划判定为实质性长计划，就会自动保存，无论 Skill 是显式调用还是隐式触发，也不需要用户再补充“保存计划”。用户可以明确说“不要保存”关闭本次写入。
+任务执行可能产生源代码、数据或实验输出、日志、模型权重、图表、论文、报告、PPT、审查或检索产物，以及外部 Skill 的输出。这些都是项目产物：它们归项目所有，保留在用户授权的项目位置，并从原位置返回或引用。
 
-自动保存分为临时缓存和永久产物：
+小分队的自动缓存用途要窄得多：它只能保存调度器生成的辅助文本，目前主要是实质性长计划。不得把项目产物复制进计划缓存，也不得把它们错误保存成计划。这一边界不会开启所有任务输出的自动保存，也不会引入固定的产物或计划模板。
+
+只要学术小分队已经触发并将规划判定为实质性长计划，就会自动保存这份辅助计划文本，无论 Skill 是显式调用还是隐式触发，也不需要用户再补充“保存计划”。用户可以明确说“不要保存”关闭本次写入。
+
+计划自动保存分为临时缓存和持久存储：
 
 - 未明确要求永久保存时，计划进入管理型缓存，默认保留 30 天；
 - 明确说“保存、保留、永久保存”或指定路径时，计划永久保存；
@@ -78,7 +82,7 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 
 `scripts/plan_cache.py` 在分配新路径时执行惰性清理，只删除该目录中符合自身命名规则、超过 30 天的普通文件；它不使用 `/tmp`、不跟随符号链接，也不删除缓存根目录之外的内容。用户未指定路径的永久计划保存到当前工作区的 `.agents/plans/`。
 
-自动保存不会写入原始凭据、访问令牌、私钥，也不会默认复制完整对话。它也不得为了交接而复制、移动、重命名、改写或缓存项目源码、数据集、实验输出、日志、模型权重、图表、论文、PPT 或其他 Skill 生成的产物。这些内容留在原获授权路径，计划只使用路径和必要的证据索引；归属不明确时保持原位。用户明确要求复制、转换、移动或另存到获授权位置时，仍以用户指令为准。用户标记为敏感、机密或“不要存储”的材料只在聊天中返回；除非用户另行给出获授权的保存位置。
+自动保存不会写入原始凭据、访问令牌、私钥，也不会默认复制完整对话。它也不得为了交接而复制、移动、重命名、改写或缓存项目产物。计划只使用这些产物在原获授权路径中的位置和必要证据索引；归属不明确时保持原位。用户明确要求复制、转换、移动或另存到获授权位置时，仍以用户指令为准。用户标记为敏感、机密或“不要存储”的材料只在聊天中返回；除非用户另行给出获授权的保存位置。
 
 规划文件没有强制章节或固定顺序，而是采用最适合当前任务的结构，只保留真正重要的信息。通常应说明目标和主线，并按需要加入证据、依赖、参数、命令、产物路径、未决选择、验收、恢复、成本、风险或模型分配；不适用的内容直接省略，不为满足格式填写空栏目。
 
@@ -127,9 +131,9 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供53条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供20条核心富 E2E，覆盖宿主加载与按范围路由分离、规划路由与实际代理、medium/high/xhigh 复杂度梯度、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖、非学术显式交办、项目产物归属和临时产物。独立可选集包含两条 Nature 集成案例和一条 `grilling` 批量提问案例，因此普通 E2E 不依赖这些外部 Skill。
+评测覆盖正式与自然语言触发、隐式触发和负例边界、阶段/领域路由、模型与推理强度选择、规划与执行的区分、写入和产物边界、single-writer、用户覆盖、长时任务交接及隔离审查。核心数据集包含53条路由案例和20条 E2E 案例；独立可选 manifest 包含两条 Nature 集成案例和一条 `grilling` 集成案例，因此核心评测不依赖这些外部 Skill。
 
-其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
+运行以下确定性检查：
 
 ```bash
 python3 scripts/validate_eval_cases.py
@@ -139,40 +143,16 @@ python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json 
 python3 scripts/run_e2e_evals.py --manifest evals/grilling-integration-cases.json --dry-run
 ```
 
-只有 Codex CLI 凭据有效时才运行真实、隔离的 JSONL 烟雾评测：
+这些命令校验数据集、单元行为和 runner manifest；dry-run 不调用模型。Codex CLI 可使用有效的 `CODEX_API_KEY` 时，可选的真实 E2E 烟雾评测为：
 
 ```bash
-python3 scripts/run_e2e_evals.py \
+python3 scripts/run_e2e_evals.py --strict-isolation --strict \
   --case e2e-direct-bounded-academic \
   --case e2e-implicit-plan \
   --case e2e-four-directory-read-only-review
 ```
 
-runner 只把 `SKILL.md`、UI 元数据、运行时参考以及计划缓存/Radar 辅助脚本组成盲测运行包；被测模型看不到仓库 README、评测题与期望答案、测试、workflow 或 runner。receipt schema 由外部 `.eval-harness/` 单独挂载。runner 使用 `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把 trace、结构化 receipt 和汇总保存到已忽略的 `evals/results/`。工作区快照会比较前后路径全集，检测新增、修改、删除、类型变化、权限变化和符号链接目标变化，也不会排除被复制的 Skill。四目录审查使用真正的目录和文件 fixture，不再把全部证据塞进 prompt。
-
-评测结果分为 `pass`、`fail` 和 `inconclusive`，每条案例会显式声明必需的证据来源。缺少可选 trace 会被记录，但不会让正确的普通行为案例失效；缺少必需证据仍为 `inconclusive`。结构化 receipt 只是模型自述，runner 还会检查其字段间语义是否自洽。JSONL 中无法归属的通用 model/effort 字段只作诊断；只有明确归属于子代理的记录才用于强路由核验。增加 `--strict` 后，`fail` 和 `inconclusive` 都会返回非零。每份汇总还会记录 runner 提交与哈希、manifest 哈希和平台。
-
-有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 通过小型正向白名单构造子进程环境，只传入选定的 `CODEX_API_KEY`；无关的环境凭据和令牌不会被继承。认证、网络、外部 Skill 缺失和超时会与 Skill 行为失败分开报告。
-
-只有安装了外部 Nature Skills 时才运行可选集成集：
-
-```bash
-python3 scripts/run_e2e_evals.py \
-  --manifest evals/nature-integration-cases.json \
-  --external-skill-root "$HOME/.agents/skills" \
-  --strict
-```
-
-安装了 `grilling` 后，可以运行一轮式阻塞澄清集成案例：
-
-```bash
-python3 scripts/run_e2e_evals.py \
-  --manifest evals/grilling-integration-cases.json \
-  --external-skill-root "$HOME/.agents/skills" \
-  --strict
-```
-
-`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。维护者可选择3条代表案例或全部20条核心案例，脱敏产物保留14天。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。数据集校验和 dry-run 不会冒充真实模型评测。
+真实 E2E 会调用模型并可能消耗 API 配额；每条案例在隔离的临时工作区运行，结果写入 `evals/results/`。认证、网络和超时失败与 Skill 行为分开报告；缺少必需证据时结果为 `inconclusive`。只有已安装相应外部 Skill 时才使用可选 manifest，并通过 `--external-skill-root` 指向安装根目录。
 
 ## 使用示例
 
