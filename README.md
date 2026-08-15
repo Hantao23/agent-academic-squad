@@ -90,9 +90,10 @@ Defaults are recommendations, not restrictions:
 
 | Work | Default route |
 | --- | --- |
-| Short or standard planning | Sol medium / high |
-| High-cost or cross-module planning | Sol xhigh |
-| Normal multi-file development, hard diagnosis, or code review | Sol xhigh |
+| Simple planning or tightly scoped code | Sol medium |
+| Medium-complexity planning or bounded non-trivial code, including ordinary multi-file work | Sol high |
+| Complex planning, coupled cross-module code, hard diagnosis, or consequential review | Sol xhigh |
+| Critical algorithm or major architecture decision | Sol max |
 | Execute a fixed, testable experiment protocol | Luna max |
 | Mathematical strategy or algorithm construction | Sol xhigh |
 | Formal proof or difficult derivation | Sol max |
@@ -126,7 +127,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 51 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 18 core cases for planned versus runtime routes, host loading versus scope-aware routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, project-artifact ownership, and temporary artifacts. Separate optional suites contain two Nature integration cases and one `grilling` batch-question case, so ordinary E2E does not depend on those external installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
+`evals/trigger-routing.csv` contains 53 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 20 core cases for planned versus runtime routes, host loading versus scope-aware routing, the medium/high/xhigh complexity ladder, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, project-artifact ownership, and temporary artifacts. Separate optional suites contain two Nature integration cases and one `grilling` batch-question case, so ordinary E2E does not depend on those external installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
@@ -171,7 +172,7 @@ python3 scripts/run_e2e_evals.py \
   --strict
 ```
 
-`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 18 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 20 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 

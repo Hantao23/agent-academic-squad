@@ -48,20 +48,22 @@ Example: “Should I rerun after changing the timing boundary, or derive a corre
 
 | Planning shape | Default |
 | --- | --- |
-| Short, explicit plan | Sol medium |
-| Standard plan | Sol high |
-| High-cost, cross-module, or open-ended plan | Sol xhigh |
+| Simple, short, and explicit plan | Sol medium |
+| Medium-complexity or standard bounded plan | Sol high |
+| Complex, coupled cross-module, high-cost, or open-ended plan | Sol xhigh |
 | Mathematical proof or theoretical strategy | Sol max |
 
 Return the plan and stop. A plan request does not authorize execution.
+
+Use the complexity of the decisions and dependencies, not file count alone. A clear plan that touches several files can remain Sol high; move to Sol xhigh when the task is complex enough to require substantial cross-module reasoning, uncertainty management, or costly trade-offs. It does not need to be exceptionally difficult before xhigh is appropriate.
 
 ## Code and experiment defaults
 
 | Work | Default |
 | --- | --- |
 | Mechanical or tightly scoped local code edit | Sol medium |
-| Non-trivial work contained within one module | Sol high |
-| Normal development, multi-file change, hard diagnosis, or code review | Sol xhigh |
+| Medium-complexity bounded change, including ordinary multi-file work with clear interfaces | Sol high |
+| Complex or coupled cross-module change, hard diagnosis, or consequential code review | Sol xhigh |
 | Critical algorithm or major architecture decision | Sol max |
 | Standard experiment design | Sol high |
 | Complex or costly experiment design | Sol xhigh |

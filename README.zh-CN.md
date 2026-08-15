@@ -90,9 +90,10 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 
 | 场景 | 默认方向 |
 | --- | --- |
-| 简短或标准规划 | Sol medium / high |
-| 高成本、跨模块规划 | Sol xhigh |
-| 常规多文件开发、困难诊断或代码审查 | Sol xhigh |
+| 简单规划或范围明确的局部代码 | Sol medium |
+| 中等复杂度规划或边界清楚的非简单代码，包括常规多文件修改 | Sol high |
+| 复杂规划、耦合的跨模块代码、困难诊断或重要审查 | Sol xhigh |
+| 关键算法或重大架构决策 | Sol max |
 | 固定且可测试的实验协议执行 | Luna max |
 | 数学策略与算法构造 | Sol xhigh |
 | 形式化证明或困难推导 | Sol max |
@@ -126,7 +127,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供51条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供18条核心富 E2E，覆盖宿主加载与按范围路由分离、规划路由与实际代理、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖、非学术显式交办、项目产物归属和临时产物。独立可选集包含两条 Nature 集成案例和一条 `grilling` 批量提问案例，因此普通 E2E 不依赖这些外部 Skill。
+`evals/trigger-routing.csv` 提供53条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供20条核心富 E2E，覆盖宿主加载与按范围路由分离、规划路由与实际代理、medium/high/xhigh 复杂度梯度、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖、非学术显式交办、项目产物归属和临时产物。独立可选集包含两条 Nature 集成案例和一条 `grilling` 批量提问案例，因此普通 E2E 不依赖这些外部 Skill。
 
 其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
 
@@ -171,7 +172,7 @@ python3 scripts/run_e2e_evals.py \
   --strict
 ```
 
-`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。维护者可选择3条代表案例或全部18条核心案例，脱敏产物保留14天。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。数据集校验和 dry-run 不会冒充真实模型评测。
+`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。维护者可选择3条代表案例或全部20条核心案例，脱敏产物保留14天。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。数据集校验和 dry-run 不会冒充真实模型评测。
 
 ## 使用示例
 

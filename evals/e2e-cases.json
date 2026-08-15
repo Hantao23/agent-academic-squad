@@ -274,6 +274,36 @@
         "final_states": ["plan_ready"], "forbidden_actions": ["artifact_modification", "experiment_execution"],
         "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes", "trace_commands"]
       }
+    },
+    {
+      "id": "e2e-simple-plan-sol-medium",
+      "source_case_id": "eval-052",
+      "prompt": "小分队派一个子代理，为已定位的单文件研究脚本参数重命名列一个简短三步计划；不要执行、不要保存。",
+      "sandbox": "read-only",
+      "expected": {
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["medium"], "required_efforts": ["medium"],
+        "runtime_role_counts": {"planner": 1}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution", "model_substitution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
+      }
+    },
+    {
+      "id": "e2e-medium-plan-sol-high",
+      "source_case_id": "eval-053",
+      "prompt": "小分队派一个子代理，规划一个中等复杂度的研究代码修改：调整两个相关模块及相应测试，接口和目标已明确，不涉及架构决策或高成本实验；不要执行、不要保存。",
+      "sandbox": "read-only",
+      "expected": {
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["high"], "required_efforts": ["high"],
+        "runtime_role_counts": {"planner": 1}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution", "model_substitution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
+      }
     }
   ]
 }
