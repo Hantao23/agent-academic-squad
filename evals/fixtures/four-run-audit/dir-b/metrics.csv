@@ -1,0 +1,5 @@
+seed,score,status
+1,0.79,ok
+2,0.78,ok
+3,0.80,ok
+4,,timeout

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Academic Squad Eval Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "answer",
+    "final_state",
+    "task_completed",
+    "claimed_execution",
+    "skill_used",
+    "stage",
+    "domain",
+    "handling",
+    "planned_routes",
+    "runtime_agents",
+    "invoked_external_skills",
+    "performed_actions",
+    "blocked_reason"
+  ],
+  "properties": {
+    "answer": {"type": "string"},
+    "final_state": {
+      "type": "string",
+      "enum": [
+        "direct_answer",
+        "plan_ready",
+        "review_complete",
+        "execution_complete",
+        "handoff_ready",
+        "launched",
+        "running",
+        "blocked"
+      ]
+    },
+    "task_completed": {"type": "boolean"},
+    "claimed_execution": {"type": "boolean"},
+    "skill_used": {"type": "boolean"},
+    "stage": {
+      "type": "string",
+      "enum": ["none", "plan", "execute", "review"]
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["none", "code_experiment", "mathematics", "paper"]
+    },
+    "handling": {
+      "type": "string",
+      "enum": ["direct", "subagent", "plan_first"]
+    },
+    "planned_routes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/route"}
+    },
+    "runtime_agents": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/route"}
+    },
+    "invoked_external_skills": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "performed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "file_write",
+          "subagent",
+          "artifact_modification",
+          "experiment_execution",
+          "literature_search",
+          "manuscript_write",
+          "report_completed",
+          "process_launch",
+          "model_substitution"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "blocked_reason": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "role", "role_kind", "model", "effort", "external_skill"],
+      "properties": {
+        "stage": {"type": "string", "enum": ["plan", "execute", "review", "search", "read", "write"]},
+        "role": {"type": "string"},
+        "role_kind": {
+          "type": "string",
+          "enum": ["planner", "executor", "reviewer", "searcher", "reader", "writer", "analyst"]
+        },
+        "model": {"type": "string"},
+        "effort": {"type": "string", "enum": ["low", "medium", "high", "xhigh", "max"]},
+        "external_skill": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

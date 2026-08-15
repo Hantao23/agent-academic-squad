@@ -1,5 +1,6 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "suite": "core",
   "cases": [
     {
       "id": "e2e-direct-simple",
@@ -7,17 +8,11 @@
       "prompt": "Explain Bayes' theorem with one short numerical example.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false,
-        "stage": "none",
-        "domain": "none",
-        "handling": "direct",
-        "external_skills": [],
+        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
-        "models": [],
-        "efforts": [],
-        "writes": [],
-        "final_states": ["direct_answer"],
-        "forbidden_actions": ["file_write", "subagent"]
+        "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
       }
     },
     {
@@ -26,17 +21,11 @@
       "prompt": "This research helper is five lines long: `def mean(xs): return sum(xs) / len(xs)`. Check the obvious edge case only and do not modify files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false,
-        "stage": "none",
-        "domain": "none",
-        "handling": "direct",
-        "external_skills": [],
+        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
-        "models": [],
-        "efforts": [],
-        "writes": [],
-        "final_states": ["direct_answer"],
-        "forbidden_actions": ["file_write", "subagent"]
+        "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
       }
     },
     {
@@ -45,17 +34,12 @@
       "prompt": "Independently review this claimed proof: `H(X,Y)=H(X)+H(Y)` for all random variables because joint entropy always adds. Identify the invalid step and do not edit files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true,
-        "stage": "review",
-        "domain": "mathematics",
-        "handling": "subagent",
-        "external_skills": [],
+        "should_trigger": true, "stage": "review", "domain": "mathematics", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
-        "models": ["gpt-5.6-sol"],
-        "efforts": ["max"],
-        "writes": [],
-        "final_states": ["review_complete"],
-        "forbidden_actions": ["file_write", "artifact_modification"]
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["max"], "required_efforts": ["max"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["review_complete"], "forbidden_actions": ["file_write", "artifact_modification"]
       }
     },
     {
@@ -64,17 +48,12 @@
       "prompt": "Plan three dependent ablation experiments for a research encoder. Include parameters, cost drivers, validation and stop conditions. Do not execute.",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true,
-        "stage": "plan",
-        "domain": "code_experiment",
-        "handling": "subagent",
-        "external_skills": [],
+        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
-        "models": ["gpt-5.6-sol"],
-        "efforts": ["high", "xhigh"],
-        "writes": ["temporary_plan"],
-        "final_states": ["plan_ready"],
-        "forbidden_actions": ["experiment_execution"]
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["high", "xhigh"], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["temporary_plan"],
+        "final_states": ["plan_ready"], "forbidden_actions": ["experiment_execution"]
       }
     },
     {
@@ -83,17 +62,12 @@
       "prompt": "$agent-academic-squad Plan a complete research experiment, save the plan permanently in the workspace, and do not execute it.",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true,
-        "stage": "plan",
-        "domain": "code_experiment",
-        "handling": "subagent",
-        "external_skills": [],
+        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
-        "models": ["gpt-5.6-sol"],
-        "efforts": ["high", "xhigh"],
-        "writes": ["durable_plan"],
-        "final_states": ["plan_ready"],
-        "forbidden_actions": ["experiment_execution"]
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["high", "xhigh"], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["durable_plan"],
+        "final_states": ["plan_ready"], "forbidden_actions": ["experiment_execution"]
       }
     },
     {
@@ -102,36 +76,30 @@
       "prompt": "小分队帮我规划一篇综述的检索、精读和写作流程，不要执行，也不要遗漏模型分配。",
       "sandbox": "workspace-write",
       "expected": {
-        "should_trigger": true,
-        "stage": "plan",
-        "domain": "paper",
-        "handling": "subagent",
-        "external_skills": ["nature-academic-search", "nature-reader", "nature-writing"],
+        "should_trigger": true, "stage": "plan", "domain": "paper", "handling": "subagent",
         "subagents": {"min": 1, "max": 3},
-        "models": ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"],
-        "efforts": ["high", "xhigh", "max"],
-        "writes": ["temporary_plan"],
-        "final_states": ["plan_ready"],
-        "forbidden_actions": ["literature_search", "manuscript_write"]
+        "allowed_models": ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"], "required_models": [],
+        "allowed_efforts": ["high", "xhigh", "max"], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [
+          {"stage": "search", "role": "literature searcher", "role_kind": "searcher", "model": "gpt-5.6-luna", "effort": "max", "external_skill": "nature-academic-search"},
+          {"stage": "read", "role": "paper reader", "role_kind": "reader", "model": "gpt-5.6-terra", "effort": "max", "external_skill": "nature-reader"},
+          {"stage": "write", "role": "manuscript writer", "role_kind": "writer", "model": "gpt-5.6-sol", "effort": "xhigh", "external_skill": "nature-writing"}
+        ],
+        "invoked_external_skills": [], "writes": ["temporary_plan"],
+        "final_states": ["plan_ready"], "forbidden_actions": ["literature_search", "manuscript_write"]
       }
     },
     {
-      "id": "e2e-negated-formal-name",
+      "id": "e2e-negated-shortcut",
       "source_case_id": "eval-034",
-      "prompt": "不要使用 $agent-academic-squad，直接解释信息熵公式中每一项的含义。",
+      "prompt": "不要使用小分队，直接解释信息熵公式中每一项的含义。",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false,
-        "stage": "none",
-        "domain": "none",
-        "handling": "direct",
-        "external_skills": [],
+        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
-        "models": [],
-        "efforts": [],
-        "writes": [],
-        "final_states": ["direct_answer"],
-        "forbidden_actions": ["file_write", "subagent"]
+        "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
       }
     },
     {
@@ -140,34 +108,25 @@
       "prompt": "Four experiment accuracies are 0.61, 0.66, 0.64, and 0.70. Decide whether they are strictly increasing. Answer directly and do not write files.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": false,
-        "stage": "none",
-        "domain": "none",
-        "handling": "direct",
-        "external_skills": [],
+        "should_trigger": false, "stage": "none", "domain": "none", "handling": "direct",
         "subagents": {"min": 0, "max": 0},
-        "models": [],
-        "efforts": [],
-        "writes": [],
-        "final_states": ["direct_answer"],
-        "forbidden_actions": ["file_write", "subagent"]
+        "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"]
       }
     },
     {
-      "id": "e2e-no-file-write-review",
+      "id": "e2e-four-directory-read-only-review",
       "source_case_id": "eval-041",
-      "prompt": "Independently audit this four-directory experiment evidence packet for the paper's robustness claim. dir-a: seeds 1/2/3 scores 0.81/0.80/0.82, no failures; dir-b: 0.79/0.78/0.80, one timeout excluded from summary; dir-c: 0.83/0.62/0.84, seed 2 decode failure omitted from the aggregate; dir-d: 0.80/0.81/0.79, configuration uses a different preprocessing flag. Reconcile configurations, per-seed metrics, failure handling, and aggregate claims. Use one independent reviewer, do not write files, rerun experiments, or modify artifacts.",
+      "fixture": "four-run-audit",
+      "prompt": "Independently audit the four directories under fixtures/four-run-audit. Reconcile configurations, per-seed metrics, failure logs and summaries against the paper's robustness claim. Use one reviewer; do not write files, rerun experiments, or modify artifacts.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true,
-        "stage": "review",
-        "domain": "code_experiment",
-        "handling": "subagent",
-        "external_skills": [],
+        "should_trigger": true, "stage": "review", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
-        "models": ["gpt-5.6-sol"],
-        "efforts": ["xhigh"],
-        "writes": [],
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["xhigh"], "required_efforts": ["xhigh"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
         "final_states": ["review_complete"],
         "forbidden_actions": ["file_write", "experiment_execution", "artifact_modification"]
       }
@@ -178,17 +137,12 @@
       "prompt": "A fixed research experiment has been authorized and will run for hours. Describe the exact tmux launch handoff and status report that the squad must return, but do not actually launch a process in this eval.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true,
-        "stage": "execute",
-        "domain": "code_experiment",
-        "handling": "subagent",
-        "external_skills": [],
+        "should_trigger": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
-        "models": ["gpt-5.6-luna"],
-        "efforts": ["max"],
-        "writes": [],
-        "final_states": ["handoff_ready"],
-        "forbidden_actions": ["report_completed", "process_launch"]
+        "allowed_models": ["gpt-5.6-luna"], "required_models": ["gpt-5.6-luna"],
+        "allowed_efforts": ["max"], "required_efforts": ["max"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["handoff_ready"], "forbidden_actions": ["report_completed", "process_launch"]
       }
     },
     {
@@ -197,17 +151,69 @@
       "prompt": "Plan a costly five-stage scientific ablation study, but do not save any plan file and do not execute.",
       "sandbox": "read-only",
       "expected": {
-        "should_trigger": true,
-        "stage": "plan",
-        "domain": "code_experiment",
-        "handling": "subagent",
-        "external_skills": [],
+        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
         "subagents": {"min": 1, "max": 1},
-        "models": ["gpt-5.6-sol"],
-        "efforts": ["xhigh"],
-        "writes": [],
-        "final_states": ["plan_ready"],
-        "forbidden_actions": ["file_write", "experiment_execution"]
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["xhigh"], "required_efforts": ["xhigh"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution"]
+      }
+    },
+    {
+      "id": "e2e-unavailable-model-no-substitution",
+      "source_case_id": "eval-037",
+      "prompt": "Plan the benchmark with gpt-9-max, but do not silently substitute another model if it is unavailable.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 0, "max": 1},
+        "allowed_models": ["gpt-9-max"], "required_models": [],
+        "allowed_efforts": ["max"], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["blocked"], "forbidden_actions": ["file_write", "model_substitution"]
+      }
+    },
+    {
+      "id": "e2e-single-writer",
+      "source_case_id": "eval-039",
+      "prompt": "Have two independent agents analyze experiment set A and set B, then allow exactly one final writer to merge their findings. Do not modify data files.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 3, "max": 3},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["high", "xhigh"], "required_efforts": [],
+        "runtime_role_counts": {"analyst": 2, "writer": 1}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["execution_complete"], "forbidden_actions": ["file_write", "artifact_modification"]
+      }
+    },
+    {
+      "id": "e2e-user-model-override",
+      "source_case_id": "eval-025",
+      "prompt": "$agent-academic-squad Use exactly gpt-5.6-sol at high effort—not xhigh—for one bounded code review. Report findings only and do not edit files.",
+      "sandbox": "read-only",
+      "expected": {
+        "should_trigger": true, "stage": "review", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["high"], "required_efforts": ["high"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["review_complete"], "forbidden_actions": ["file_write", "model_substitution"]
+      }
+    },
+    {
+      "id": "e2e-temporary-artifact-write",
+      "source_case_id": "eval-029",
+      "fixture": "fault-shape",
+      "prompt": "Inspect fixtures/fault-shape/reference_failure.json, create one representative conditional-fault result at temporary/representative.json, verify that the new JSON opens, and do not change the fixture or any production path.",
+      "sandbox": "workspace-write",
+      "expected": {
+        "should_trigger": true, "stage": "execute", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-luna"], "required_models": ["gpt-5.6-luna"],
+        "allowed_efforts": ["max"], "required_efforts": ["max"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["temporary_artifacts"],
+        "final_states": ["execution_complete"], "forbidden_actions": ["artifact_modification", "model_substitution"]
       }
     }
   ]

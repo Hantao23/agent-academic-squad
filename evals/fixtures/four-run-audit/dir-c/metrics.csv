@@ -1,0 +1,4 @@
+seed,score,status
+1,0.83,ok
+2,0.62,decode_failure
+3,0.84,ok

@@ -130,7 +130,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-`evals/trigger-routing.csv` 提供41条正例、负例、上下文和边界案例，覆盖是否触发、阶段、领域、委派、外部 Skill、只读约束和用户模型覆盖。`evals/e2e-cases.json` 另有11条富 E2E 案例，可表达多 Skill 路由、子代理数量范围、允许的模型和 effort、预期写入、最终状态及禁止动作。
+`evals/trigger-routing.csv` 提供41条正式调用、自然快捷词、隐式触发、负例、上下文和边界案例。`evals/e2e-cases.json` 提供15条核心富 E2E，覆盖规划路由与实际代理、允许与必需模型/effort、子代理范围、写入、最终状态、禁止动作、不可用模型、single-writer、用户模型覆盖和临时产物。独立的两条 `evals/nature-integration-cases.json` 用于验证真实 Nature Skill 调用，不让普通 E2E 依赖外部 Skill 安装。
 
 其中也包含由真实使用任务脱敏概括出的案例：按既有协议启动长时实验、跨多个实验目录做只读证据审查，以及仅向临时目录写入的条件故障实验。仓库不保存原任务对话或私有路径。先运行确定性数据校验、单元测试和 runner dry-run：
 
@@ -138,17 +138,34 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 python3 scripts/validate_eval_cases.py
 python3 -m unittest discover -s tests -v
 python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
+python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
 ```
 
 只有 Codex CLI 凭据有效时才运行真实、隔离的 JSONL 烟雾评测：
 
 ```bash
-python3 scripts/run_e2e_evals.py --max-cases 3
+python3 scripts/run_e2e_evals.py \
+  --case e2e-direct-bounded-academic \
+  --case e2e-implicit-plan \
+  --case e2e-four-directory-read-only-review
 ```
 
-runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把已忽略追踪的 trace 和汇总保存到 `evals/results/`。有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 会移除环境中原有的 OpenAI 密钥变量，只把 `CODEX_API_KEY` 传给每个 `codex exec` 子进程。认证、网络和超时失败与 Skill 失败分开报告；Codex JSONL 尚未稳定暴露的路由字段会明确标记为 `unverifiable`。
+runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`，按案例选择最小沙箱，遮蔽 API key 形态的字符串，并把 trace、结构化 receipt 和汇总保存到已忽略的 `evals/results/`。工作区快照会比较前后路径全集，检测新增、修改、删除、类型变化、权限变化和符号链接目标变化，也不会排除被复制的 Skill。四目录审查使用真正的目录和文件 fixture，不再把全部证据塞进 prompt。
 
-`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。workflow 默认运行3条并保留脱敏产物14天。数据集校验和 dry-run 不会冒充真实模型评测。
+评测结果分为 `pass`、`fail` 和 `inconclusive`。任何必需但无法观测的证据都不能被算成通过。结构化 receipt 记录模型自述的阶段、路由、代理、动作和最终状态，但它只是辅助证据；runner 会同时检查 JSONL 事件、命令和工作区变化，不能仅凭模型自述证明任务完成。增加 `--strict` 后，`fail` 和 `inconclusive` 都会返回非零。每份汇总还会记录 Codex 版本、runner 提交与哈希、manifest 哈希、平台和 Python 版本。
+
+有可用的 `CODEX_API_KEY` 时可增加 `--strict-isolation`，使用全新的临时 `HOME` 与 `CODEX_HOME`，排除其他用户 Skill。runner 会移除环境中原有的 OpenAI 密钥变量，只把 `CODEX_API_KEY` 传给每个 `codex exec` 子进程。认证、网络、外部 Skill 缺失和超时会与 Skill 行为失败分开报告。
+
+只有安装了外部 Nature Skills 时才运行可选集成集：
+
+```bash
+python3 scripts/run_e2e_evals.py \
+  --manifest evals/nature-integration-cases.json \
+  --external-skill-root "$HOME/.agents/skills" \
+  --strict
+```
+
+`.github/workflows/ci.yml` 在每次 push 和 pull request 时运行确定性校验；`.github/workflows/e2e.yml` 仅手动触发，需要仓库的 `OPENAI_API_KEY` secret，但只在 E2E runner 步骤中将其暴露为 `CODEX_API_KEY`。维护者可选择3条代表案例或全部15条核心案例，脱敏产物保留14天。checkout、环境安装、依赖安装和产物上传步骤都无法读取密钥。数据集校验和 dry-run 不会冒充真实模型评测。
 
 ## 使用示例
 
@@ -162,7 +179,7 @@ runner 会把当前 Skill 复制到隔离的项目级 Skill 目录，使用 `--j
 这个交给小分队，只规划，不执行。
 ```
 
-`不用小分队`、`不要交给小分队`、`不要使用 $agent-academic-squad` 以及仅仅讨论“小分队”的句子不会触发。正式 Skill 语法是：
+`不用小分队`、`不要交给小分队` 等自然语言否定，以及仅仅讨论“小分队”的句子，不会触发快捷词。`$agent-academic-squad` 则是宿主级正式调用语法，只要写出就应按正式调用处理；不要把它写进否定句后再期待绕过。正式 Skill 语法是：
 
 ```text
 $agent-academic-squad 先规划这个跨模块实验，不要执行，给出预计成本和模型分配。
@@ -221,7 +238,10 @@ agent-academic-squad/
 ├── .github/workflows/               # 静态 CI 与手动 E2E 工作流
 ├── agents/openai.yaml               # Codex 界面元数据
 ├── evals/trigger-routing.csv         # 触发与路由回归案例
-├── evals/e2e-cases.json              # 富 E2E 预期
+├── evals/e2e-cases.json              # 核心 schema-v2 E2E 预期
+├── evals/nature-integration-cases.json # 可选 Nature 集成集
+├── evals/receipt-schema.json         # 结构化自述 schema
+├── evals/fixtures/                   # 真实读写 E2E fixture
 ├── references/routing.md            # 模型与推理强度路由
 ├── references/external-skills.md    # 外部学术 Skill 映射
 ├── scripts/plan_cache.py             # 临时计划路径与安全清理

@@ -130,7 +130,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 41 positive, negative, contextual, and boundary cases for activation, stage, domain, delegation, external skills, read-only constraints, and user model overrides. `evals/e2e-cases.json` adds 11 richer cases with multi-skill routes, subagent bounds, allowed models and efforts, expected writes, final states, and forbidden actions. The datasets include generalized examples derived from real usage, but store no original task transcript or private path.
+`evals/trigger-routing.csv` contains 41 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 15 core cases for planned versus runtime routes, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
@@ -138,17 +138,34 @@ Run deterministic validation and unit tests with:
 python3 scripts/validate_eval_cases.py
 python3 -m unittest discover -s tests -v
 python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
+python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
 ```
 
 Run real, isolated JSONL smoke evals only when the Codex CLI has valid credentials:
 
 ```bash
-python3 scripts/run_e2e_evals.py --max-cases 3
+python3 scripts/run_e2e_evals.py \
+  --case e2e-direct-bounded-academic \
+  --case e2e-implicit-plan \
+  --case e2e-four-directory-read-only-review
 ```
 
-The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces and summaries under `evals/results/`. Add `--strict-isolation` when `CODEX_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. The runner removes ambient OpenAI key variables and passes only `CODEX_API_KEY` to each `codex exec` subprocess. Authentication, network, and timeout failures are reported separately from Skill failures. Some routing fields remain explicitly `unverifiable` until the Codex JSONL surface exposes stable events for them.
+The runner copies the current skill into an isolated repository-level skill directory, uses `--json --ephemeral --ignore-user-config --ignore-rules --output-schema`, applies the least sandbox declared by each case, redacts API-key-shaped strings, and stores ignored traces, structured receipts, and summaries under `evals/results/`. Its workspace snapshots compare the full path union and detect creation, modification, deletion, type changes, mode changes, and symlink-target changes—including changes inside the copied Skill. The four-directory review uses real fixture files rather than embedding all evidence in the prompt.
 
-`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, runs three cases by default, and uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
+Results are `pass`, `fail`, or `inconclusive`. Required evidence that the current JSONL surface does not expose can never become a pass. The structured receipt describes the model's claimed stage, routes, agents, actions, and final state, but is explicitly self-report: it is checked alongside JSONL events, commands, and workspace changes and cannot alone prove task completion. Use `--strict` to make either `fail` or `inconclusive` return nonzero. Every summary records the Codex version, runner commit and hash, manifest hash, platform, and Python version.
+
+Add `--strict-isolation` when `CODEX_API_KEY` is available to use clean temporary `HOME` and `CODEX_HOME` directories and exclude other user skills. The runner removes ambient OpenAI key variables and passes only `CODEX_API_KEY` to each `codex exec` subprocess. Authentication, network, missing external skills, and timeout failures are reported separately from Skill behavior.
+
+Run the optional Nature integration suite only when the external skills are installed:
+
+```bash
+python3 scripts/run_e2e_evals.py \
+  --manifest evals/nature-integration-cases.json \
+  --external-skill-root "$HOME/.agents/skills" \
+  --strict
+```
+
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 15 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 
@@ -162,7 +179,7 @@ As a best-effort natural-language shortcut, start the message with `小分队` (
 这个交给小分队，只规划，不执行。
 ```
 
-Negations such as `不用小分队`, `不要交给小分队`, or `不要使用 $agent-academic-squad`, and sentences that merely discuss the name, do not trigger the skill. The formal syntax is:
+Natural-language negations such as `不用小分队` or `不要交给小分队`, and sentences that merely discuss the name, do not trigger the shortcut. By contrast, `$agent-academic-squad` is host-level formal invocation wherever it appears; do not include it in a negation and expect a bypass. The formal syntax is:
 
 ```text
 $agent-academic-squad Plan this cross-module experiment first. Do not execute it. Include expected cost and model assignments.
@@ -217,7 +234,10 @@ agent-academic-squad/
 ├── .github/workflows/               # Static CI and manual E2E workflow
 ├── agents/openai.yaml               # Codex UI metadata
 ├── evals/trigger-routing.csv        # Trigger and routing regression cases
-├── evals/e2e-cases.json             # Rich E2E expectations
+├── evals/e2e-cases.json             # Core schema-v2 E2E expectations
+├── evals/nature-integration-cases.json # Optional Nature integration suite
+├── evals/receipt-schema.json        # Structured self-report schema
+├── evals/fixtures/                  # Real read/write E2E fixture trees
 ├── references/routing.md            # Model and effort routing
 ├── references/external-skills.md    # External academic skill mapping
 ├── scripts/plan_cache.py             # Temporary plan allocation and cleanup

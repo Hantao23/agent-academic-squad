@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Validate eval datasets
@@ -21,7 +21,9 @@ jobs:
       - name: Run unit tests
         run: python3 -m unittest discover -s tests -v
       - name: Validate E2E runner CLI
-        run: python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
+        run: |
+          python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
+          python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
       - name: Check Skill frontmatter
         run: |
           python3 - <<'PY'

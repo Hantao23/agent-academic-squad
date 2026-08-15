@@ -3,10 +3,18 @@ name: Manual E2E Evals
 on:
   workflow_dispatch:
     inputs:
-      max_cases:
-        description: Number of E2E cases to run
+      scope:
+        description: Run the three representative cases or the complete core suite
         required: true
-        default: "3"
+        type: choice
+        default: representative
+        options:
+          - representative
+          - all
+      codex_version:
+        description: Codex CLI npm version
+        required: true
+        default: latest
 
 permissions:
   contents: read
@@ -16,23 +24,38 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - name: Install Codex CLI
-        run: npm install --global @openai/codex
+        env:
+          CODEX_VERSION: ${{ inputs.codex_version }}
+        run: |
+          if ! [[ "$CODEX_VERSION" =~ ^(latest|[0-9]+\.[0-9]+\.[0-9]+([-+][A-Za-z0-9._-]+)?)$ ]]; then
+            echo "Invalid Codex CLI version" >&2
+            exit 2
+          fi
+          npm install --global "@openai/codex@$CODEX_VERSION"
       - name: Run isolated JSONL E2E evals
         env:
           CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          E2E_MAX_CASES: ${{ inputs.max_cases }}
-        run: python3 scripts/run_e2e_evals.py --strict-isolation --max-cases "$E2E_MAX_CASES"
+          E2E_SCOPE: ${{ inputs.scope }}
+        run: |
+          if [[ "$E2E_SCOPE" == "all" ]]; then
+            python3 scripts/run_e2e_evals.py --strict-isolation --strict
+          else
+            python3 scripts/run_e2e_evals.py --strict-isolation --strict \
+              --case e2e-direct-bounded-academic \
+              --case e2e-implicit-plan \
+              --case e2e-four-directory-read-only-review
+          fi
       - name: Upload redacted traces and summaries
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agent-academic-squad-e2e
           path: evals/results/
