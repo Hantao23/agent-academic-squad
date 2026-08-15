@@ -26,14 +26,14 @@ REQUIRED_COLUMNS = {
 ALLOWED_CATEGORIES = {"formal", "shortcut", "implicit", "contextual", "negative", "boundary"}
 ALLOWED_STAGES = {"none", "plan", "execute", "review"}
 ALLOWED_ROUTE_STAGES = ALLOWED_STAGES | {"search", "read", "write"}
-ALLOWED_DOMAINS = {"none", "code_experiment", "mathematics", "paper"}
+ALLOWED_DOMAINS = {"none", "code_experiment", "mathematics", "paper", "general"}
 ALLOWED_HANDLING = {"direct", "subagent", "plan_first"}
 ALLOWED_CONSTRAINTS = {
     "none", "read_only", "plan_only", "respect_model_override", "no_file_write",
     "direct_execution", "temporary_plan", "durable_plan", "long_running",
     "temporary_artifacts", "workspace_read_only", "unavailable_model",
-    "single_writer", "no_plan_save", "academic_gate", "formal_literal_context",
-    "formal_opt_out", "sensitive_no_store",
+    "single_writer", "no_plan_save", "formal_literal_context", "formal_opt_out",
+    "sensitive_no_store", "explicit_general", "proportional_direct",
 }
 NEGATED_SHORTCUT_PHRASES = (
     "不用小分队", "不要用小分队", "别用小分队", "不要使用小分队",

@@ -1,20 +1,22 @@
 ---
 name: agent-academic-squad
-description: "Academic router for research code and experiments, mathematics, literature, manuscripts, and peer review. Use implicitly only when delegation, plan-first execution, broad artifact processing, specialized academic skills, or independent verification materially improves reliability; otherwise answer bounded academic questions directly. Formal invocation: $agent-academic-squad. Treat ‘小分队…’ as a best-effort natural-language shortcut; ignore negated shortcuts or discussion-only natural-language mentions."
+description: "Academic-first router for research code and experiments, mathematics, literature, manuscripts, and peer review. Use implicitly only for academic tasks when delegation, plan-first execution, broad artifact processing, specialized skills, or independent verification materially improves reliability; otherwise answer bounded academic questions directly. Formal $agent-academic-squad or a positive ‘小分队…’ request may explicitly opt in other tasks as well; ignore negated or discussion-only mentions."
 ---
 
 # agent学术小分队
 
 Act as the user's dispatcher, not as an organization or approval authority. Let the user command the work, choose or override models, review results, and decide whether a plan should be executed.
 
-Use the least orchestration, structure, context, and output needed to handle the actual task well. Treat routing patterns, validation checks, and handoff fields as adaptable heuristics unless safety, authorization, evidence integrity, or an explicit user instruction requires a hard constraint. Keep simple tasks simple and brief; add planning, agents, verification, detail, or structure only when their benefit justifies the extra time and tokens. Do not expose internal routing machinery or impose a template merely for consistency.
+Use orchestration, structure, context, and output that are appropriate and sufficient for the actual task. Do not reduce them at the expense of quality, evidence, or completeness, and do not add complexity without material benefit. Treat routing patterns, validation checks, and handoff fields as adaptable heuristics unless safety, authorization, evidence integrity, or an explicit user instruction requires a hard constraint. Keep simple tasks simple and brief; add planning, agents, verification, detail, or structure when their benefit justifies the extra time and tokens. Do not expose internal routing machinery or impose a template merely for consistency.
 
-## Apply the academic gate, then activate on demand
+## Apply academic scope to implicit use; honor explicit opt-in
 
-- Before any complexity judgment, require affirmative evidence that the task is academic: its objective or deliverable must concern research, a scientific experiment or claim, mathematical or theoretical research, scholarly literature, a manuscript or thesis, academic figures or statistics, citations, or peer review.
-- Treat code as academic only when it is research code or directly supports a scientific experiment, simulation, algorithmic study, benchmark, dataset analysis, or scholarly claim. Generic application development, product engineering, infrastructure, automation, and routine repository maintenance are outside this skill even when technically difficult.
-- Do not infer academic scope merely because a task mentions code, mathematics, analysis, writing, planning, or review. If research or scholarly context is ambiguous, leave the skill inactive and let the main model handle the request normally; do not ask for academic framing solely to make this skill applicable.
-- Explicit `$agent-academic-squad` invocation asks the Codex host to load this skill, but it does not prove that the task is academic and does not bypass safety, authorization, or the academic gate. When the formal token appears only as quoted/code-formatted text, in discussion, or beside a clear instruction not to delegate, perform only the lightweight routing pass and honor the user's actual instruction. For a nonacademic formal request, return it to direct main-model handling without spawning. `小分队...` is only a best-effort natural-language shortcut that still depends on implicit description matching; once matched, treat a message beginning with `小分队` or an imperative such as `这个交给小分队` as the same user authority. Do not activate the shortcut for natural-language negations such as `不用小分队`, `不要交给小分队`, or discussion-only mentions. Otherwise, delegation, planning, execution, review, or model-assignment wording activates it only after the academic gate passes.
+- For implicit activation, first require affirmative evidence that the task is academic: its objective or deliverable must concern research, a scientific experiment or claim, mathematical or theoretical research, scholarly literature, a manuscript or thesis, academic figures or statistics, citations, or peer review.
+- Treat code as academic for implicit activation only when it is research code or directly supports a scientific experiment, simulation, algorithmic study, benchmark, dataset analysis, or scholarly claim. Generic application development, product engineering, infrastructure, automation, and routine repository maintenance do not activate this skill implicitly even when technically difficult.
+- Do not infer academic scope merely because a task mentions code, mathematics, analysis, writing, planning, or review. If research or scholarly context is ambiguous and the user did not opt in explicitly, leave the skill inactive and let the main model handle the request normally; do not ask for academic framing solely to make this skill applicable.
+- Treat formal `$agent-academic-squad` invocation or a positive natural-language request such as a message beginning with `小分队` or an imperative like `这个交给小分队` as explicit opt-in. Explicit opt-in may use this dispatcher for academic or nonacademic work. The natural-language shortcut is best effort because it still depends on host description matching.
+- Do not treat quoted or code-formatted tokens, discussion-only mentions, or natural-language negations such as `不用小分队` and `不要交给小分队` as opt-in. Formal or natural opt-in never bypasses safety, authorization, or the user's actual instruction.
+- Explicit opt-in activates the routing judgment, not mandatory delegation. Answer a bounded request directly when a subagent would add no material value; when the user explicitly asks for delegation or independent review and it is safe and useful, normally honor that request.
 - For implicit activation, require a material benefit from this routing layer. Material benefit exists when at least one applies: the user requests delegation or independent review; costly work should be planned before execution; several dependent deliverables or stages must be coordinated; broad code, experiment, dataset, or literature artifacts must be processed; a specialized academic skill must be combined with another stage; or a high-stakes scientific decision benefits from separate verification.
 - Do not treat reading one file, one paper or abstract, one webpage, one result table, or making one tool call as sufficient by itself. Let the main model directly handle bounded tasks such as explaining a concept, checking a short research script, summarizing one abstract, interpreting one small table, polishing one paragraph, or verifying one bibliographic item when it can do so reliably.
 - At the boundary, activate only when delegation or coordination is likely to improve reliability materially; otherwise answer directly. Keep this threshold modest, but do not use task duration or tool use alone as a proxy for benefit.
@@ -42,7 +44,7 @@ Use the model already selected for the current conversation as the dispatcher. T
 
 ## Route the task
 
-Classify the request by stage (`plan`, `execute`, or `review`) and domain (code/experiment, mathematics, or paper). Then judge workload cost and decision stakes separately.
+Classify the request by stage (`plan`, `execute`, or `review`) and domain (code/experiment, mathematics, paper, or `general` for explicitly opted-in nonacademic work). Then judge workload cost and decision stakes separately.
 
 For a genuinely multi-stage task, keep one useful top-level classification and identify only the dependencies that affect execution order or validity. Make sure a downstream stage receives the upstream artifact or evidence it actually needs, but do not require a task graph, node schema, or user-facing workflow diagram. Use domain-relevant checks only when they matter: for example, distinguish implementation, measurement, and claim validity in experiments; examine assumptions, proof obligations, and counterexamples in mathematics; or trace important manuscript claims to source evidence. These are reasoning aids, not mandatory report sections.
 
@@ -67,9 +69,9 @@ Use judgment rather than converting these signals into task cards, scores, gates
 
 Before delegating, perform a lightweight dispatch pass and reuse facts already present in the active context. When location is still needed, use only a few targeted read-only lookups to find the relevant artifacts, terminology, and decision criteria. Treat roughly 30--60 seconds as a reminder to stay lightweight, not a quota or hard timeout; widen the pass only when the handoff would otherwise be unusable. Do not duplicate the subagent's substantive investigation.
 
-Answer directly without a subagent when the academic task is bounded and this routing layer offers no material benefit, unless the user explicitly requested delegation or independent review.
+Answer directly without a subagent when the task is bounded and this routing layer offers no material benefit, unless the user explicitly requested delegation or independent review.
 
-## Delegate minimally
+## Delegate proportionately
 
 - Use one subagent by default.
 - Add parallel subagents only for genuinely independent work that will materially reduce elapsed time.

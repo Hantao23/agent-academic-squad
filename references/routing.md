@@ -9,6 +9,7 @@ Use these routes as defaults, not restrictions. The user's explicit choice alway
 - Code and experiment defaults
 - Mathematics defaults
 - Paper defaults
+- Explicit general-task defaults
 - Review defaults
 - Codex Radar
 - Model availability
@@ -16,7 +17,7 @@ Use these routes as defaults, not restrictions. The user's explicit choice alway
 ## Selection sequence
 
 1. Identify the stage: planning, execution, or review.
-2. Identify the domain: code/experiment, mathematics, or paper.
+2. Identify the domain: code/experiment, mathematics, paper, or `general` for explicitly opted-in nonacademic work.
 3. Judge workload cost and decision stakes independently.
 4. Choose the default model and reasoning effort below.
 5. Apply a user override.
@@ -98,6 +99,18 @@ Choose the primary workflow skill from [external-skills.md](external-skills.md).
 | Reviewer response | Sol xhigh |
 
 When a request combines reading and manuscript writing, let Terra max return grounded reading notes, then use Sol high or xhigh for the writing stage. Do not force two stages when one bounded task can produce the requested artifact reliably.
+
+## Explicit general-task defaults
+
+Nonacademic tasks enter this skill only through formal `$agent-academic-squad` invocation or a positive `小分队...` request. Apply the same stage, workload, stakes, and user-override logic, then choose the route whose capability best matches the actual bottleneck:
+
+- use Sol medium or high for bounded planning, synthesis, or focused work;
+- use Sol xhigh for complex planning, difficult diagnosis, multi-file work, or consequential review;
+- use Sol max for critical architecture, formal reasoning, or unusually high-stakes decisions;
+- use Luna max only for a fixed, mechanical, testable execution protocol or broad first-pass search;
+- use Terra max when the main bottleneck is grounded reading across long sources.
+
+These are defaults, not a separate role system. Do not invoke an academic external skill merely because a nonacademic task opted into the squad.
 
 ## Review defaults
 

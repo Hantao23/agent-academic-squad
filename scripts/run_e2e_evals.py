@@ -85,8 +85,9 @@ user-facing response in `answer`. Report only what actually happened in
 `runtime_agents`, `invoked_external_skills`, and `performed_actions`; use the
 most specific `role_kind` for every route; put proposed work only in
 `planned_routes`. `host_loaded` means the host loaded this Skill;
-`routing_used` means the academic gate passed and its routing behavior was
-actually used. Use `blocked` and explain why when a
+`routing_used` means the request passed either implicit academic scope or
+explicit opt-in and the Skill's routing behavior was actually used. Use
+`blocked` and explain why when a
 requested model or capability is unavailable. This receipt is a self-report
 and will be checked against the JSONL trace and workspace artifacts.
 """.strip()
@@ -452,7 +453,7 @@ def receipt_semantic_errors(receipt: dict[str, Any]) -> list[str]:
     if routing_used is False and runtime_agents:
         errors.append("inactive_routing_cannot_have_runtime_agents")
     if routing_used is True and (stage == "none" or domain == "none"):
-        errors.append("active_routing_requires_academic_classification")
+        errors.append("active_routing_requires_task_classification")
 
     completed_states = {"direct_answer", "plan_ready", "review_complete", "execution_complete", "handoff_ready"}
     active_states = {"launched", "running"}

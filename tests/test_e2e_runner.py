@@ -87,6 +87,10 @@ def observations(receipt_value: dict[str, object] | None, **overrides: object) -
 
 
 class E2ERunnerTests(unittest.TestCase):
+    def test_explicit_general_route_is_semantically_valid(self) -> None:
+        value = receipt(domain="general")
+        self.assertEqual(run_e2e_evals.receipt_semantic_errors(value), [])
+
     def test_parse_and_observe_structured_receipt(self) -> None:
         trace = "\n".join(
             (
@@ -343,7 +347,7 @@ class E2ERunnerTests(unittest.TestCase):
         )
         self.assertIn("execution_complete_requires_claimed_execution", execution_errors)
 
-    def test_formal_host_load_does_not_imply_academic_routing(self) -> None:
+    def test_formal_host_load_does_not_force_routing(self) -> None:
         direct_receipt = receipt(
             final_state="direct_answer",
             host_loaded=True,

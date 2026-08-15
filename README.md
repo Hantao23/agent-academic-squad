@@ -2,9 +2,9 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-A lightweight Codex skill for routing academic tasks.
+A lightweight Codex skill for academic-first task routing, with explicit opt-in for other work.
 
-It activates only for clearly academic work and only when routing is likely to provide material value. It first checks whether the request concerns research, scientific experiments, mathematics or algorithms, scholarly literature, or manuscript work. Reading one file or webpage, or making one tool call, is not enough by itself; the squad becomes useful when the task needs planning, coordination, broad artifact processing, specialized academic skills, or independent review.
+It can activate implicitly for clearly academic work when routing is likely to provide material value. A formal `$agent-academic-squad` invocation or a positive `小分队...` request can explicitly opt in nonacademic work as well. Reading one file or webpage, or making one tool call, is not enough by itself; the squad becomes useful when the task needs planning, coordination, broad artifact processing, specialized skills, or independent review.
 
 ## What it solves
 
@@ -27,7 +27,7 @@ High-cost work is normally planned first unless the user has already supplied an
 flowchart TD
     A["User submits a task"] --> B["Main model performs lightweight triage"]
     B --> C["Identify stage: plan / execute / review"]
-    B --> D["Identify domain: code-experiment / mathematics / paper"]
+    B --> D["Identify domain: code-experiment / mathematics / paper / explicit general"]
     C --> E["Assess workload and decision stakes separately"]
     D --> E
     E --> F{"Can the task be handled directly?"}
@@ -40,8 +40,8 @@ flowchart TD
 
 Core principles:
 
-- Use the least orchestration, structure, context, and output that the task needs. Simple questions receive simple answers; complexity is added only when it improves the result.
-- Academic scope is a hard gate. Generic software engineering, business operations, everyday writing, personal tasks, and general questions do not implicitly activate the skill.
+- Use orchestration, structure, context, and output that are appropriate and sufficient for the task. Do not trade away quality or completeness for brevity, and add complexity only when it improves the result.
+- Academic scope is the gate for implicit activation. Generic software engineering, business operations, everyday writing, personal tasks, and general questions do not activate the skill implicitly, but the user may opt in with `$agent-academic-squad` or a positive `小分队...` request.
 - Words such as “code,” “mathematics,” “analysis,” “writing,” “planning,” or “review” do not prove academic scope.
 - Implicit activation is supported. A conversation running `GPT-5.6 Sol medium` can perform the lightweight dispatch check; the main model does not need to be switched to xhigh first.
 - A single file, abstract, short script, small table, paragraph edit, or one tool call is not sufficient unless delegation would materially improve reliability.
@@ -123,7 +123,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 47 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 16 core cases for planned versus runtime routes, host loading versus academic routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
+`evals/trigger-routing.csv` contains 49 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 17 core cases for planned versus runtime routes, host loading versus scope-aware routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
@@ -158,7 +158,7 @@ python3 scripts/run_e2e_evals.py \
   --strict
 ```
 
-`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 16 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 17 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 
@@ -172,7 +172,7 @@ As a best-effort natural-language shortcut, start the message with `小分队` (
 这个交给小分队，只规划，不执行。
 ```
 
-Natural-language negations such as `不用小分队` or `不要交给小分队`, and sentences that merely discuss the name, do not trigger the shortcut. `$agent-academic-squad` asks the host to load the Skill, but it does not bypass the academic gate, safety, or the user's actual instruction. A nonacademic request, a quoted/code-formatted mention, or a clear no-delegation instruction receives only the lightweight routing pass and no subagent. The formal syntax for an actual academic task is:
+Natural-language negations such as `不用小分队` or `不要交给小分队`, and sentences that merely discuss the name, do not trigger the shortcut. Academic scope limits only implicit activation: `$agent-academic-squad` or a positive `小分队...` request explicitly opts into the dispatcher even for nonacademic work. Quoted or code-formatted mentions are not requests. Explicit opt-in does not bypass safety, authorization, or the user's actual instruction, and it does not force a subagent when direct handling is more appropriate. Formal examples include:
 
 ```text
 $agent-academic-squad Plan this cross-module experiment first. Do not execute it. Include expected cost and model assignments.
@@ -184,6 +184,10 @@ $agent-academic-squad Execute the accepted experiment plan and return the artifa
 
 ```text
 $agent-academic-squad Use Sol max to check this information-theory proof. Report only invalid steps and proposed corrections.
+```
+
+```text
+$agent-academic-squad Review this complex cross-team product migration plan for dependencies and rollback gaps. Do not edit it.
 ```
 
 You can override defaults at any time:

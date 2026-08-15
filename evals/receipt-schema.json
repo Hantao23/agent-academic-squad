@@ -43,7 +43,7 @@
     },
     "domain": {
       "type": "string",
-      "enum": ["none", "code_experiment", "mathematics", "paper"]
+      "enum": ["none", "code_experiment", "mathematics", "paper", "general"]
     },
     "handling": {
       "type": "string",

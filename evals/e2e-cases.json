@@ -231,7 +231,7 @@
       }
     },
     {
-      "id": "e2e-formal-nonacademic-gate",
+      "id": "e2e-formal-nonacademic-direct",
       "source_case_id": "eval-042",
       "prompt": "$agent-academic-squad Help me plan a household move and shopping checklist. Do not use subagents or write files.",
       "sandbox": "read-only",
@@ -242,6 +242,21 @@
         "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
         "final_states": ["direct_answer"], "forbidden_actions": ["file_write", "subagent"],
         "required_evidence": ["receipt", "workspace", "trace_turn"]
+      }
+    },
+    {
+      "id": "e2e-explicit-general-plan",
+      "source_case_id": "eval-048",
+      "prompt": "$agent-academic-squad Plan a complex website migration covering design, implementation, data migration, and launch handoff. Return only the plan; do not execute or save files.",
+      "sandbox": "read-only",
+      "expected": {
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "general", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["xhigh"], "required_efforts": ["xhigh"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": [],
+        "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
       }
     }
   ]
