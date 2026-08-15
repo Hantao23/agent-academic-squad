@@ -258,6 +258,22 @@
         "final_states": ["plan_ready"], "forbidden_actions": ["file_write", "experiment_execution"],
         "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes"]
       }
+    },
+    {
+      "id": "e2e-project-artifact-boundary",
+      "source_case_id": "eval-050",
+      "fixture": "four-run-audit",
+      "prompt": "Use the existing files under fixtures/four-run-audit to produce and automatically save a substantial follow-up reproduction plan. Preserve every fixture and project artifact in place; reference original paths only, and do not copy, move, rename, rewrite, or cache the configurations, data, logs, summaries, or other project artifacts. Do not execute the plan.",
+      "sandbox": "workspace-write",
+      "expected": {
+        "host_loaded": true, "routing_used": true, "stage": "plan", "domain": "code_experiment", "handling": "subagent",
+        "subagents": {"min": 1, "max": 1},
+        "allowed_models": ["gpt-5.6-sol"], "required_models": ["gpt-5.6-sol"],
+        "allowed_efforts": ["xhigh"], "required_efforts": ["xhigh"],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": [], "writes": ["temporary_plan"],
+        "final_states": ["plan_ready"], "forbidden_actions": ["artifact_modification", "experiment_execution"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_subagents", "trace_routes", "trace_commands"]
+      }
     }
   ]
 }

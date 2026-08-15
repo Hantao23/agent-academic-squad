@@ -50,6 +50,7 @@ Core principles:
 - Multi-stage work tracks only dependencies that matter; agents are split by verifiable evidence or artifact boundaries, and disagreements are resolved from evidence rather than votes.
 - The dispatcher selects relevant conversation context and adds neutral, verifiable artifact and evidence indexes instead of copying the entire conversation.
 - Substantial plans are saved automatically as faithful Markdown artifacts, but neither the file nor chat is forced into a universal template.
+- Managed persistence owns only squad-generated auxiliary text. Project files and external-skill outputs stay in their original authorized locations and are referenced by path rather than copied into the cache.
 - A planning request returns a plan and stops. It does not silently start execution.
 - A review request reports findings and does not modify artifacts unless the user also asks for changes.
 - Small tasks are answered directly; the skill does not use multiple agents for their own sake.
@@ -75,7 +76,7 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/plans/
 
 `scripts/plan_cache.py` performs lazy cleanup when allocating a new path. It deletes only ordinary files older than 30 days that match its own naming convention. It does not use `/tmp`, follow symlinks, or delete outside its managed cache root. A permanent plan without a user-supplied path is stored under `.agents/plans/` in the current workspace.
 
-Automatic persistence never stores raw credentials, tokens, private keys, or full conversation transcripts by default. User-marked sensitive, confidential, or `do not store` material stays in chat unless the user supplies an authorized destination.
+Automatic persistence never stores raw credentials, tokens, private keys, or full conversation transcripts by default. It also never copies, moves, renames, rewrites, or caches project-owned source code, datasets, experiment outputs, logs, weights, figures, manuscripts, presentations, or artifacts produced by an external skill merely for handoff. Those artifacts remain at their original authorized paths; plans refer to them with compact evidence indexes. If ownership is unclear, the item is left in place. An explicit user request for a copy, conversion, move, or authorized destination still takes precedence.
 
 A saved plan has no mandatory headings or section order. It uses the structure that best fits the task and includes only material information: normally the objective and mainline, plus relevant evidence, dependencies, parameters, commands, artifact paths, unresolved choices, validation, recovery, costs, risks, or model assignments. Inapplicable sections are omitted rather than filled with placeholders.
 
@@ -123,7 +124,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-`evals/trigger-routing.csv` contains 49 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 17 core cases for planned versus runtime routes, host loading versus scope-aware routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
+`evals/trigger-routing.csv` contains 50 formal, shortcut, implicit, negative, contextual, and boundary cases. `evals/e2e-cases.json` adds 18 core cases for planned versus runtime routes, host loading versus scope-aware routing, allowed versus required models and efforts, subagent bounds, writes, final states, forbidden actions, unavailable-model handling, single-writer behavior, user overrides, explicit nonacademic opt-in, project-artifact ownership, and temporary artifacts. A separate two-case `evals/nature-integration-cases.json` suite tests real external Nature Skill invocation without making ordinary E2E depend on those installations. The datasets contain generalized examples derived from real usage, but no original task transcript or private path.
 
 Run deterministic validation and unit tests with:
 
@@ -158,7 +159,7 @@ python3 scripts/run_e2e_evals.py \
   --strict
 ```
 
-`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 17 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
+`.github/workflows/ci.yml` runs deterministic validation on every push and pull request. `.github/workflows/e2e.yml` is manual, requires the repository `OPENAI_API_KEY` secret, exposes it as `CODEX_API_KEY` only to the E2E runner step, and lets a maintainer select either three representative cases or all 18 core cases. It uploads redacted artifacts for 14 days. Checkout, setup, dependency installation, and artifact upload steps cannot read the key. Dataset validation and dry runs are not presented as real model evaluations.
 
 ## Usage
 

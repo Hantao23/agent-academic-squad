@@ -48,3 +48,4 @@ eval-046,formal,true,false,none,none,direct,,formal_literal_context|no_file_writ
 eval-047,formal,true,false,none,none,direct,,formal_literal_context|no_file_write,"检查这个代码块里的字面文本是否拼写正确：```text $agent-academic-squad Plan a study. ``` 不要执行或委派。"
 eval-048,formal,true,true,plan,general,subagent,,plan_only|no_plan_save|explicit_general,"$agent-academic-squad 规划一次涉及设计、开发、数据迁移和上线交接的复杂网站迁移，只返回计划，不执行也不保存文件。"
 eval-049,shortcut,true,true,review,general,subagent,,read_only|no_file_write|explicit_general,"小分队帮我独立审查这份跨团队产品发布方案的依赖、回滚和遗漏，只报告问题，不修改文件。"
+eval-050,implicit,true,true,plan,code_experiment,subagent,,plan_only|temporary_plan|project_artifact_boundary,"根据四个已有实验目录制定后续复现实验计划并自动保存计划；只引用原始路径，不复制、移动、改写或缓存已有配置、数据、日志和结果。"
