@@ -274,18 +274,18 @@ class E2ERunnerTests(unittest.TestCase):
 
     def test_secret_redaction_and_write_classification(self) -> None:
         self.assertNotIn("secret123", run_e2e_evals.redact("sk-secret123"))
-        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/plans/a.md"), "temporary_plan")
+        self.assertEqual(run_e2e_evals.classify_write(".tmp/agent-academic-squad/plans/2026-08/17T120000Z-a.md"), "temporary_plan")
         self.assertEqual(run_e2e_evals.classify_write(".agents/plans/a.md"), "durable_plan")
-        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/reviews/a.md"), "temporary_review")
+        self.assertEqual(run_e2e_evals.classify_write(".tmp/agent-academic-squad/reviews/2026-08/17T120000Z-a.md"), "temporary_review")
         self.assertEqual(run_e2e_evals.classify_write(".agents/reviews/a.md"), "durable_review")
-        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/handoffs/a.md"), "temporary_handoff")
+        self.assertEqual(run_e2e_evals.classify_write(".tmp/agent-academic-squad/handoffs/2026-08/17T120000Z-a.md"), "temporary_handoff")
         self.assertEqual(run_e2e_evals.classify_write(".agents/handoffs/a.md"), "durable_handoff")
         self.assertEqual(run_e2e_evals.classify_write("temporary/a.json"), "temporary_artifacts")
         self.assertEqual(
             run_e2e_evals.classify_write("wrong/agent-academic-squad/plans/fake.md"),
             "workspace",
         )
-        self.assertEqual(run_e2e_evals.classify_write(".cache/agent-academic-squad/plans/../fake.md"), "workspace")
+        self.assertEqual(run_e2e_evals.classify_write(".tmp/agent-academic-squad/plans/../fake.md"), "workspace")
 
     def test_strict_mode_rejects_inconclusive(self) -> None:
         self.assertEqual(run_e2e_evals.outcome_exit_code(0, 0, 1, strict=False), 0)
@@ -296,8 +296,8 @@ class E2ERunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             workspace = Path(temporary)
             runtime_cache = workspace / ".cache" / "codex" / "state.json"
-            plan = workspace / ".cache" / "agent-academic-squad" / "plans" / "plan.md"
-            review = workspace / ".cache" / "agent-academic-squad" / "reviews" / "review.md"
+            plan = workspace / ".tmp" / "agent-academic-squad" / "plans" / "2026-08" / "17T120000Z-plan.md"
+            review = workspace / ".tmp" / "agent-academic-squad" / "reviews" / "2026-08" / "17T120000Z-review.md"
             runtime_cache.parent.mkdir(parents=True)
             plan.parent.mkdir(parents=True)
             review.parent.mkdir(parents=True)
@@ -306,8 +306,8 @@ class E2ERunnerTests(unittest.TestCase):
             review.write_text("review", encoding="utf-8")
             snapshot = run_e2e_evals.snapshot_workspace(workspace)
         self.assertNotIn(".cache/codex/state.json", snapshot)
-        self.assertIn(".cache/agent-academic-squad/plans/plan.md", snapshot)
-        self.assertIn(".cache/agent-academic-squad/reviews/review.md", snapshot)
+        self.assertIn(".tmp/agent-academic-squad/plans/2026-08/17T120000Z-plan.md", snapshot)
+        self.assertIn(".tmp/agent-academic-squad/reviews/2026-08/17T120000Z-review.md", snapshot)
 
     def test_codex_environment_scopes_api_key_to_codex_variable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -74,13 +74,13 @@ Automatic saving has two modes:
 - A temporary file can be copied to durable storage before expiry.
 - The dispatcher reports the absolute path, storage status, retention period, and the actual task status. A saved plan still does not start execution.
 
-The default temporary cache is:
+The default temporary cache is project-local and organized by kind and UTC month:
 
 ```text
-${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/{plans,reviews,handoffs}/
+<workspace-root>/.tmp/agent-academic-squad/{plans,reviews,handoffs}/<YYYY-MM>/<DDTHHMMSSZ>-<task-slug>.md
 ```
 
-`scripts/artifact_cache.py` allocates kind-specific paths and performs lazy cleanup. It deletes only ordinary files older than 30 days that match its own naming convention. It does not use `/tmp`, follow symlinks, or delete outside its managed cache roots. A durable file without a user-supplied path is stored under `.agents/plans/`, `.agents/reviews/`, or `.agents/handoffs/` in the current workspace.
+`scripts/artifact_cache.py` creates only the selected kind and current month directories, allocates a new file rather than appending to or overwriting an earlier artifact, and performs lazy cleanup. It visits only valid month directories and deletes only ordinary files older than 30 days that match its own naming convention, then removes empty managed month directories. It does not follow symlinks or delete outside the resolved project cache root. In a Git worktree, automatic saving requires `.tmp/agent-academic-squad/` to be ignored; the skill never edits ignore rules itself. If this or another safety check prevents saving, the dispatcher keeps the faithful result in chat and briefly tells the user the concrete reason. A durable file without a user-supplied path is stored under `.agents/plans/`, `.agents/reviews/`, or `.agents/handoffs/` in the current workspace.
 
 Automatic persistence never stores raw credentials, tokens, private keys, or full conversation transcripts by default. It also never copies, moves, renames, rewrites, or caches project artifacts merely for handoff. Auxiliary files refer to those artifacts with compact evidence indexes at their original authorized paths. If ownership is unclear, the item is left in place. An explicit user request for a copy, conversion, move, or authorized destination still takes precedence.
 

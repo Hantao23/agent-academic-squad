@@ -232,7 +232,12 @@ def classify_write(path: str) -> str:
         "reviews": "review",
         "handoffs": "handoff",
     }
-    if parts[:2] == (".cache", "agent-academic-squad") and len(parts) > 3 and normalized.suffix.lower() == ".md":
+    if (
+        parts[:2] == (".tmp", "agent-academic-squad")
+        and len(parts) == 5
+        and re.fullmatch(r"\d{4}-\d{2}", parts[3])
+        and normalized.suffix.lower() == ".md"
+    ):
         kind = auxiliary_kinds.get(parts[2])
         if kind:
             return f"temporary_{kind}"

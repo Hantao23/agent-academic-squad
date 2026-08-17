@@ -57,6 +57,15 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("what remains unverified", route_section)
         self.assertIn("does not override the two-subagent limit", route_section)
 
+        artifact_section = skill.split("## Preserve reusable squad auxiliary artifacts", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("give the concrete reason", artifact_section)
+        self.assertIn("never skip persistence silently", artifact_section)
+        self.assertIn(".tmp/agent-academic-squad", artifact_section)
+        self.assertIn("<YYYY-MM>", artifact_section)
+        self.assertIn("<DDTHHMMSSZ>", artifact_section)
+        self.assertIn("verify that `.tmp/agent-academic-squad/` is ignored", artifact_section)
+        self.assertIn("Do not edit `.gitignore` or `.git/info/exclude` automatically", artifact_section)
+
 
 if __name__ == "__main__":
     unittest.main()

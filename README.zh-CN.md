@@ -74,13 +74,13 @@ flowchart TD
 - 临时文件可在过期前复制到持久路径；
 - 主模型说明绝对路径、保存状态、保留期限和真实任务状态；保存计划仍不代表开始执行。
 
-临时缓存默认位于：
+临时缓存默认位于项目内，并按类别和 UTC 月份组织：
 
 ```text
-${XDG_CACHE_HOME:-$HOME/.cache}/agent-academic-squad/{plans,reviews,handoffs}/
+<workspace-root>/.tmp/agent-academic-squad/{plans,reviews,handoffs}/<YYYY-MM>/<DDTHHMMSSZ>-<task-slug>.md
 ```
 
-`scripts/artifact_cache.py` 按产物类别分配路径并执行惰性清理，只删除符合自身命名规则、超过 30 天的普通文件；它不使用 `/tmp`、不跟随符号链接，也不删除管理型缓存根目录之外的内容。用户未指定路径的持久文件按类别保存到当前工作区的 `.agents/plans/`、`.agents/reviews/` 或 `.agents/handoffs/`。
+`scripts/artifact_cache.py` 只创建本次所需的类别目录和当月目录，每次新建文件而不追加或覆盖旧产物，并执行惰性清理。它只进入合法月份目录，只删除符合自身命名规则且超过 30 天的普通文件，随后移除已经为空的受管月份目录；它不跟随符号链接，也不删除项目缓存根目录之外的内容。项目位于 Git 工作树时，只有 `.tmp/agent-academic-squad/` 已被忽略才自动保存，Skill 不会自行修改忽略规则。如果该检查或其他安全检查阻止保存，主模型会在聊天中保留完整结果，并用一句话说明未保存的具体原因。用户未指定路径的持久文件按类别保存到当前工作区的 `.agents/plans/`、`.agents/reviews/` 或 `.agents/handoffs/`。
 
 自动保存不会写入原始凭据、访问令牌、私钥，也不会默认复制完整对话。它也不得为了交接而复制、移动、重命名、改写或缓存项目产物。辅助文件只使用这些产物在原获授权路径中的位置和必要证据索引；归属不明确时保持原位。用户明确要求复制、转换、移动或另存到获授权位置时，仍以用户指令为准。用户标记为敏感、机密或“不要存储”的材料只在聊天中返回；除非用户另行给出获授权的保存位置。
 
