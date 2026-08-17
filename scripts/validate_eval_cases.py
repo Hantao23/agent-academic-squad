@@ -38,6 +38,7 @@ ALLOWED_CONSTRAINTS = {
     "sensitive_no_store", "explicit_general", "proportional_direct",
     "project_artifact_boundary", "one_round_blocker_batch",
     "max_two_subagents_per_turn", "phase_split_if_overloaded", "emergent_overrun",
+    "explain_staged_cost",
 }
 NEGATED_SHORTCUT_PHRASES = (
     "不用小分队", "不要用小分队", "别用小分队", "不要使用小分队",
