@@ -131,7 +131,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-The evals cover formal and natural-language activation, implicit and negative boundaries, stage/domain routing, model and effort choices, planning versus execution, write and artifact boundaries, single-writer behavior, user overrides, long-running handoffs, and isolated review. The core datasets contain 55 routing cases and 20 E2E cases. Separate optional manifests cover two Nature integrations and one `grilling` integration, so the core suite does not require those external skills.
+The evals cover formal and natural-language activation, implicit, contextual, and negative boundaries, stage/domain routing, model and effort choices, planning versus execution, oversized-task preflight and emergent phase splitting, write and artifact boundaries, single-writer and per-turn two-subagent-limit behavior, user overrides, long-running handoffs, and isolated review. The core datasets contain 58 routing cases and 20 E2E cases. Separate optional manifests cover two Nature integrations and one `grilling` integration, so the core suite does not require those external skills.
 
 Run the deterministic checks with:
 

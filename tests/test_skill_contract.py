@@ -27,6 +27,30 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("Complex or coupled cross-module change", routing)
         self.assertIn("Critical algorithm or major architecture decision | Sol max", routing)
 
+    def test_each_turn_has_an_absolute_two_subagent_limit_and_phase_split(self) -> None:
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        heading = "## Delegate proportionately"
+        section = skill.split(heading, 1)[1].split("\n## ", 1)[0]
+        self.assertIn("absolute limit of two distinct subagents", section)
+        self.assertIn("one assistant turn responding to one user message", section)
+        self.assertIn("newly started or already exists from an earlier turn", section)
+        self.assertIn("Multiple interactions with the same agent", section)
+        self.assertIn("every descendant subagent", section)
+        self.assertIn("Reset the set at the next user message", section)
+        self.assertIn("no per-task or user-override exception", section)
+        self.assertIn("Default to no recursive delegation", section)
+
+        route_section = skill.split("## Route the task", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("main dispatcher, not a subagent", route_section)
+        self.assertIn("Before starting any subagent", route_section)
+        self.assertIn("Do not spawn a planning or scouting agent merely", route_section)
+        self.assertIn("main model and at most two subagents", route_section)
+        self.assertIn("decline to execute the whole scope before work starts", route_section)
+        self.assertIn("stop without modifying project artifacts", route_section)
+        self.assertIn("declare an emergent overrun at the first safe boundary", route_section)
+        self.assertIn("what remains unverified", route_section)
+        self.assertIn("does not override the two-subagent limit", route_section)
+
 
 if __name__ == "__main__":
     unittest.main()
