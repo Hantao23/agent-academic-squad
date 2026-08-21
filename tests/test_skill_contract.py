@@ -8,6 +8,22 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class SkillContractTests(unittest.TestCase):
+    def test_subagent_final_persistence_contract_is_mechanical_and_honest(self) -> None:
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        heading = "## Preserve subagent final deliverables before synthesis"
+        self.assertIn(heading, skill)
+        section = skill.split(heading, 1)[1].split("\n## ", 1)[0]
+        self.assertIn("formal user-facing deliverable", section)
+        self.assertIn("status-only notices", section)
+        self.assertIn("failed or blocked final", section)
+        self.assertIn("verbatim", section)
+        self.assertIn("normalized", section)
+        self.assertIn("reconstructed", section)
+        self.assertIn("persist_final.py save", section)
+        self.assertIn("persist_final.py verify-sources", section)
+        self.assertIn("do not rename or move it automatically", section)
+        self.assertIn("Do not draft the synthesis until", section)
+
     def test_subagent_model_disclosure_contract_is_present(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         heading = "## Disclose subagent models used"
