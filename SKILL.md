@@ -26,7 +26,7 @@ Use orchestration, structure, context, and output that are appropriate and suffi
 ## Load routing rules
 
 - Read [references/routing.md](references/routing.md) before choosing a subagent model or reasoning effort.
-- Read [references/external-skills.md](references/external-skills.md) before assigning an installed external skill to a subagent.
+- Read [references/external-skills.md](references/external-skills.md) before applying an installed external skill directly or assigning one to a subagent.
 - Run `python3 scripts/radar_snapshot.py` only under the Radar conditions defined in that reference.
 - Invoke only the core external skills listed in `external-skills.md` unless the user explicitly requests another installed skill. Do not reproduce those workflows here.
 
@@ -74,6 +74,14 @@ Use judgment rather than converting these signals into task cards, scores, gates
 Before delegating, perform a lightweight dispatch pass and reuse facts already present in the active context. When location is still needed, use only a few targeted read-only lookups to find the relevant artifacts, terminology, and decision criteria. Treat roughly 30--60 seconds as a reminder to stay lightweight, not a quota or hard timeout; widen the pass only when the handoff would otherwise be unusable. Do not duplicate the subagent's substantive investigation.
 
 Answer directly without a subagent when the task is bounded and this routing layer offers no material benefit, unless the user explicitly requested delegation or independent review.
+
+## Apply hash boundaries before costly reactions
+
+- Use the installed `hash-boundary` skill when a code or experiment task adds or changes a hash, checksum, fingerprint, cache key, manifest gate, provenance digest, resume gate, or invalidation rule; also use it before accepting a mismatch as a reason to recompute, rebuild, delete, migrate, evict, refuse resume, or broaden the task. Read its complete `SKILL.md` before approving the mechanism or consequence.
+- Applying `hash-boundary` does not by itself require another subagent. For bounded direct work, the dispatcher applies it itself. For a delegated hash-centered subtask, name `hash-boundary` in the assignment and make the same planner, executor, or reviewer responsible for its workflow; do not add a separate agent merely because a hash exists.
+- Before any expensive or destructive mismatch response, require the protected result, the hash's single purpose, the reading consumer, the exact match and mismatch consequences, and the semantic producer inputs that can change that result. Treat the mismatch as evidence, not authorization. If no semantic producer input changed, do not rerun or widen scope.
+- Keep compatibility or cache keys, broad informational provenance, and artifact-local integrity checks separate. Rebuild only the narrowest affected downstream layer, and keep the action inside the user's authorized task.
+- Verify the boundary with positive cases for every admitted semantic input, negative cases for unrelated changes, and a separate check of the mismatch consequence. Do not invoke this route for a routine call to an established cryptographic API when its boundary and behavior are unchanged.
 
 ## Clarify genuine user-decision blockers once
 

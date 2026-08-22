@@ -43,6 +43,28 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("Complex or coupled cross-module change", routing)
         self.assertIn("Critical algorithm or major architecture decision | Sol max", routing)
 
+    def test_hash_boundary_route_requires_semantic_cause_before_rerun(self) -> None:
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        heading = "## Apply hash boundaries before costly reactions"
+        self.assertIn(heading, skill)
+        section = skill.split(heading, 1)[1].split("\n## ", 1)[0]
+        self.assertIn("complete `SKILL.md`", section)
+        self.assertIn("does not by itself require another subagent", section)
+        self.assertIn("mismatch as evidence, not authorization", section)
+        self.assertIn("If no semantic producer input changed, do not rerun or widen scope", section)
+        self.assertIn("narrowest affected downstream layer", section)
+        self.assertIn("positive cases", section)
+        self.assertIn("negative cases", section)
+
+        external = (ROOT / "references" / "external-skills.md").read_text(encoding="utf-8")
+        route_heading = "## Hash-boundary route"
+        self.assertIn(route_heading, external)
+        route = external.split(route_heading, 1)[1].split("\n## ", 1)[0]
+        self.assertIn("presence of a hash is not a reason to delegate", route)
+        self.assertIn("same planner, executor, or reviewer", route)
+        self.assertIn("semantic input allowlist", route)
+        self.assertIn("mismatch alone never authorizes", route)
+
     def test_each_turn_has_an_absolute_two_subagent_limit_and_phase_split(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         heading = "## Delegate proportionately"

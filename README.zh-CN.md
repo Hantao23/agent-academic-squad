@@ -200,6 +200,14 @@ $agent-academic-squad 找一个子代理精读这篇论文，再由另一个执�
 
 ## 外部 Skills
 
+对于涉及哈希、缓存键、manifest、resume gate、失效逻辑或 mismatch 触发重跑的代码与实验任务，小分队可以使用独立安装的 [`hash-boundary`](https://github.com/Hantao23/hash-boundary) Skill。范围较小的任务由调度器直接应用；以哈希设计、审查或实现为核心的委派任务，则由同一个任务负责人使用该 Skill，不会仅仅因为出现哈希就额外增加一个子代理。任何重算、删除、拒绝续跑或任务扩张，都必须先把 mismatch 追溯到确实会改变受保护结果的语义生产输入。
+
+将它作为用户级 Skill 安装在小分队旁边：
+
+```bash
+git clone https://github.com/Hantao23/hash-boundary.git "$HOME/.agents/skills/hash-boundary"
+```
+
 当多个相互关联、必须由用户决定且当前可以同时回答的阻塞项出现时，小分队可以调用一次独立安装的 `grilling`。它把当前 frontier 连同建议一次性批量返回后停止；单个简单问题、可自行调查的事实或自动多轮追问不会触发它。
 
 论文类子任务可以继续调用专门的外部 Skill，例如：

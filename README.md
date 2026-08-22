@@ -196,6 +196,14 @@ Do not plan first. Execute directly.
 
 ## External skills
 
+For code or experiment work involving hashes, cache keys, manifests, resume gates, invalidation, or mismatch-triggered reruns, the squad can use the separately installed [`hash-boundary`](https://github.com/Hantao23/hash-boundary) skill. The dispatcher applies it directly for bounded work or assigns it to the same agent that owns a hash-centered subtask; it does not create an extra agent merely because a hash exists. A mismatch must be traced to a semantic producer input before it can justify any recomputation, deletion, refusal to resume, or scope expansion.
+
+Install it alongside the squad as a user-level Skill:
+
+```bash
+git clone https://github.com/Hantao23/hash-boundary.git "$HOME/.agents/skills/hash-boundary"
+```
+
 For several related user-decision blockers that are answerable at the same time, the squad can call the separately installed `grilling` skill once. It returns the whole current frontier as one recommended batch and stops; it is not used for one simple question, inspectable facts, or automatic multi-round interrogation.
 
 Paper-related subtasks can use separately installed academic skills, including:

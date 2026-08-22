@@ -1,10 +1,12 @@
 # External skills
 
-Treat the subagent model as the task owner and the external skill as its workflow and tool guide.
+Treat the model performing the subtask as the task owner and the external skill as its workflow and tool guide. That model may be the dispatcher for bounded direct work or a subagent when delegation is materially useful.
 
 The `nature-*` workflows referenced below are provided by [Yuan1z0825/nature-skills](https://github.com/Yuan1z0825/nature-skills) under the [Apache License 2.0](https://github.com/Yuan1z0825/nature-skills/blob/main/LICENSE). This file defines squad routing only and does not redistribute their implementations.
 
 The `grilling` workflow is provided by [mattpocock/skills](https://github.com/mattpocock/skills/tree/main/skills/productivity/grilling) under the [MIT License](https://github.com/mattpocock/skills/blob/main/LICENSE). Upstream supports asking every currently unblocked frontier question in one batch per round. This repository references that separately installed workflow and does not redistribute it.
+
+The `hash-boundary` workflow is provided by [Hantao23/hash-boundary](https://github.com/Hantao23/hash-boundary). It is installed separately; this repository defines when and how the squad uses it and does not redistribute its implementation.
 
 ## Dispatch rules
 
@@ -20,10 +22,22 @@ Use `grilling` only when several material decisions must come from the user, the
 
 Assign one read-only Sol high subagent. Tell it to read the complete installed `grilling/SKILL.md`, then apply only the first-frontier batch behavior: return every currently answerable decision as one numbered batch, include its recommended answer and material consequences, exclude downstream questions, and stop without interacting with the user, writing files, planning, or executing. The dispatcher returns the batch and waits. Do not call `grilling` again for that task unless the user explicitly requests another round.
 
+## Hash-boundary route
+
+Use `hash-boundary` for code and experiment work when the task adds or changes a hash-like mechanism, or when a mismatch could be used to justify recomputation, rebuilding, deletion, migration, cache eviction, refusal to resume, or expansion beyond the requested task.
+
+- For bounded work handled directly, the dispatcher reads the complete installed `hash-boundary/SKILL.md` and applies it itself. The presence of a hash is not a reason to delegate.
+- When hash design, review, or implementation is the delegated subtask's central deliverable, make `hash-boundary` its primary external skill and assign it to the same planner, executor, or reviewer who owns the mechanism. Require that agent to read the complete installed skill before acting.
+- If a broader subtask already needs another primary external workflow, keep that workflow primary and have the dispatcher enforce the hash decision boundary. Split out a hash review only when it is an independently useful deliverable; do not stack skills or add an agent for ceremony.
+- The handoff must identify the protected result, single purpose, reading consumer, match and mismatch consequences, semantic input allowlist, and narrowest downstream response. It must state whether the proposed action remains inside the user's authorized scope.
+- Completion evidence must include positive invalidation cases, negative irrelevant-change cases, and a test of the mismatch consequence independent from digest calculation. A mismatch alone never authorizes a rerun, deletion, migration, cache eviction, refusal to resume, or scope expansion.
+- Do not use this route for routine calls to established cryptographic APIs when neither their boundary nor their consequences change.
+
 ## Core routes
 
 | Task | Primary skill | Boundary |
 | --- | --- | --- |
+| Design, review, or implement behavior-controlling hashes, cache keys, resume gates, manifests, or mismatch handling | `hash-boundary` | Require a semantic cause and the narrowest downstream consequence; never let mismatch alone authorize costly or expanded work |
 | Multi-source literature search, deduplication, screening, or reference-file management | `nature-academic-search` | Use for broad source discovery and citation management |
 | Retrieve lawful full text or requested supporting information | `nature-downloader` | Use only lawful open-access, publisher-API, or user-authorized institutional routes; respect its SI confirmation gate |
 | Full-paper reading, translation, or figure/table-aware interpretation | `nature-reader` | Preserve source grounding and the requested reading depth |
