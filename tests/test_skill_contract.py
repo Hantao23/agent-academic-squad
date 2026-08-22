@@ -20,6 +20,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("normalized", section)
         self.assertIn("reconstructed", section)
         self.assertIn("persist_final.py save", section)
+        self.assertIn("--input-file -", section)
+        self.assertIn("Do not create a workspace staging", section)
+        self.assertIn("never delete or modify a caller-owned input", section)
         self.assertIn("persist_final.py verify-sources", section)
         self.assertIn("do not rename or move it automatically", section)
         self.assertIn("Do not draft the synthesis until", section)
@@ -103,6 +106,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("<DDTHHMMSSZ>", artifact_section)
         self.assertIn("verify that `.tmp/agent-academic-squad/` is ignored", artifact_section)
         self.assertIn("Do not edit `.gitignore` or `.git/info/exclude` automatically", artifact_section)
+        self.assertIn("managed cache may contain only helper-allocated files", artifact_section)
+        self.assertIn("no dispatcher-created staging or scratch file remains", artifact_section)
+        self.assertIn("never infer ownership from a filename", artifact_section)
 
 
 if __name__ == "__main__":
