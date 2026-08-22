@@ -71,6 +71,27 @@ A bounded recommendation about whether to rerun an experiment or derive a metric
 
 Use judgment rather than converting these signals into task cards, scores, gates, hashes, or a persistent state machine.
 
+## Calibrate task complexity without inflating scope
+
+Judge scope complexity, unresolved decisions, execution cost, and decision stakes separately before choosing tools, agents, or effort.
+
+- Treat a task as **bounded** when the target and output contract are explicit, the required inputs already exist, the change stays within one downstream layer, and no unresolved choice can change the result. Handle it directly with focused checks.
+- Treat a task as **medium** when several directly related artifacts or local interfaces must change together but their boundaries are known and verification remains focused. The main model may execute it, using one subagent only when delegation materially improves reliability.
+- Treat a task as **broad** only when it changes upstream semantics, crosses several dependent layers, contains a material unresolved choice, has several dependent deliverables, or requires costly execution. Plan or stage only for those concrete reasons.
+- Repository size, academic importance, file count, tool count, the presence of hashes or manifests, and the existence of QA are not complexity evidence by themselves. High decision stakes strengthen verification inside the current boundary; they do not turn a bounded task into a broad one.
+- When a user correction narrows the output or replaces an earlier interpretation, shrink the active scope immediately. An earlier broader plan, investigation, or hash contract has no authority to keep the task broad.
+- Widen inspection or execution only after identifying concrete evidence that the current boundary is insufficient, such as a changed semantic producer input, a direct interface incompatibility, or a focused validation failure. State that evidence and its consequence before widening.
+
+## Use the downstream-artifact fast path
+
+When the user asks only to revise figures, layout, labels, formatting, export formats, reports, or other downstream presentation artifacts and upstream data semantics have not changed:
+
+- Treat an exact input, target, and output-count contract as an executable specification. Reuse the existing upstream results.
+- Inspect only the direct input artifact, the downstream producer, the target outputs, and the focused QA or tests needed for that output contract. Do not perform repository-wide investigation by default.
+- Do not launch a pilot, recompute an experiment, rebuild upstream results, or migrate unrelated artifacts. A plotting, QA, provenance, manifest, or hash mismatch cannot by itself override this rule; apply `hash-boundary` when such a mismatch is present.
+- Generate and validate the replacement outputs before deleting or replacing old outputs, and constrain deletion to exact authorized targets.
+- Leave this fast path only when a semantic upstream input changed or direct validation proves that reuse is invalid. Report the evidence before expanding scope or starting costly work.
+
 Before delegating, perform a lightweight dispatch pass and reuse facts already present in the active context. When location is still needed, use only a few targeted read-only lookups to find the relevant artifacts, terminology, and decision criteria. Treat roughly 30--60 seconds as a reminder to stay lightweight, not a quota or hard timeout; widen the pass only when the handoff would otherwise be unusable. Do not duplicate the subagent's substantive investigation.
 
 Answer directly without a subagent when the task is bounded and this routing layer offers no material benefit, unless the user explicitly requested delegation or independent review.

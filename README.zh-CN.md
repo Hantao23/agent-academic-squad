@@ -55,6 +55,8 @@ flowchart TD
 - 当多个当前可回答的用户决策确实阻塞任务时，小分队可以调用一次 `grilling`，把第一层 frontier 连同建议批量返回，然后停止等待；单个阻塞直接询问；
 - 规划请求只返回计划，不在同一轮偷偷执行；
 - 审查任务默认只报告问题，不擅自修改产物；
+- 复杂度来自依赖深度、未决选择、语义变化和真实执行成本，而不是仓库规模、学术重要性、文件或工具数量、哈希、manifest 或 QA。高风险只加强边界内的聚焦验证，不把有界任务扩大；
+- 只修改图、排版、标签、格式或报告等下游产物时复用已有上游结果；除非出现具体的上游语义证据，否则只检查直接输入、生产者、目标输出和聚焦 QA；
 - 小任务由主模型直接回答，不为“使用多代理”而使用多代理。
 
 完整规则见 [`SKILL.md`](SKILL.md)，模型选择见 [`references/routing.md`](references/routing.md)。
@@ -133,7 +135,7 @@ git clone https://github.com/Hantao23/agent-academic-squad.git "${CODEX_HOME:-$H
 
 ## Evals
 
-评测覆盖正式与自然语言触发、隐式触发、上下文二次识别和负例边界、阶段/领域路由、模型与推理强度选择、规划与执行的区分、超大任务事前判断与中途扩容分阶段、写入和产物边界、single-writer、单轮两个子代理上限、用户覆盖、长时任务交接及隔离审查。核心数据集包含58条路由案例和20条 E2E 案例；独立可选 manifest 包含两条 Nature 集成案例和一条 `grilling` 集成案例，因此核心评测不依赖这些外部 Skill。
+评测覆盖正式与自然语言触发、隐式触发、上下文二次识别和负例边界、阶段/领域路由、模型与推理强度选择、规划与执行的区分、超大任务事前判断与中途扩容分阶段、下游产物范围控制、写入和产物边界、single-writer、单轮两个子代理上限、用户覆盖、长时任务交接及隔离审查。核心数据集包含59条路由案例和20条 E2E 案例；独立可选 manifest 包含两条 Nature 集成案例、一条 `grilling` 集成案例和一条 `hash-boundary` 下游组图回归案例，因此核心评测不依赖这些外部 Skill。
 
 运行以下确定性检查：
 
@@ -143,6 +145,7 @@ python3 -m unittest discover -s tests -v
 python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
 python3 scripts/run_e2e_evals.py --manifest evals/grilling-integration-cases.json --dry-run
+python3 scripts/run_e2e_evals.py --manifest evals/hash-boundary-integration-cases.json --dry-run
 ```
 
 这些命令校验数据集、单元行为和 runner manifest；dry-run 不调用模型。Codex CLI 可使用有效的 `CODEX_API_KEY` 时，可选的真实 E2E 烟雾评测为：
@@ -246,6 +249,7 @@ agent-academic-squad/
 ├── evals/e2e-cases.json              # 核心 E2E 预期
 ├── evals/nature-integration-cases.json # 可选 Nature 集成集
 ├── evals/grilling-integration-cases.json # 可选一轮式 grilling 集成集
+├── evals/hash-boundary-integration-cases.json # 可选下游快速路径回归集
 ├── evals/receipt-schema.json         # 结构化自述 schema
 ├── evals/fixtures/                   # 真实读写 E2E fixture
 ├── references/routing.md            # 模型与推理强度路由

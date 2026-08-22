@@ -1,0 +1,4 @@
+error_type,error_rate,coverage
+substitution,0.01,0.98
+insertion,0.01,0.97
+deletion,0.01,0.96

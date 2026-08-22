@@ -55,6 +55,8 @@ Core principles:
 - When several currently answerable user decisions genuinely block progress, the squad may use `grilling` once to return the whole first frontier as one batch with recommendations, then stop and wait. A single blocker is asked directly.
 - A planning request returns a plan and stops. It does not silently start execution.
 - A review request reports findings and does not modify artifacts unless the user also asks for changes.
+- Complexity comes from dependency depth, unresolved choices, semantic change, and actual execution cost—not repository size, academic importance, file or tool count, hashes, manifests, or QA. High stakes strengthen focused verification without expanding a bounded task.
+- Downstream-only figure, layout, label, format, and report revisions reuse existing upstream results. They inspect only direct inputs, producers, outputs, and focused QA unless concrete semantic evidence requires a wider scope.
 - Small tasks are answered directly; the skill does not use multiple agents for their own sake.
 
 See [`SKILL.md`](SKILL.md) for the complete workflow and [`references/routing.md`](references/routing.md) for model selection.
@@ -133,7 +135,7 @@ This skill requires a Codex environment that supports subagent delegation. `scri
 
 ## Evals
 
-The evals cover formal and natural-language activation, implicit, contextual, and negative boundaries, stage/domain routing, model and effort choices, planning versus execution, oversized-task preflight and emergent phase splitting, write and artifact boundaries, single-writer and per-turn two-subagent-limit behavior, user overrides, long-running handoffs, and isolated review. The core datasets contain 58 routing cases and 20 E2E cases. Separate optional manifests cover two Nature integrations and one `grilling` integration, so the core suite does not require those external skills.
+The evals cover formal and natural-language activation, implicit, contextual, and negative boundaries, stage/domain routing, model and effort choices, planning versus execution, oversized-task preflight and emergent phase splitting, downstream-artifact scope control, write and artifact boundaries, single-writer and per-turn two-subagent-limit behavior, user overrides, long-running handoffs, and isolated review. The core datasets contain 59 routing cases and 20 E2E cases. Separate optional manifests cover two Nature integrations, one `grilling` integration, and one `hash-boundary` downstream-figure regression, so the core suite does not require those external skills.
 
 Run the deterministic checks with:
 
@@ -143,6 +145,7 @@ python3 -m unittest discover -s tests -v
 python3 scripts/run_e2e_evals.py --dry-run --max-cases 3
 python3 scripts/run_e2e_evals.py --manifest evals/nature-integration-cases.json --dry-run
 python3 scripts/run_e2e_evals.py --manifest evals/grilling-integration-cases.json --dry-run
+python3 scripts/run_e2e_evals.py --manifest evals/hash-boundary-integration-cases.json --dry-run
 ```
 
 These commands validate datasets, unit behavior, and runner manifests; dry runs do not call a model. With a valid `CODEX_API_KEY` available to the Codex CLI, an optional real E2E smoke run is:
@@ -242,6 +245,7 @@ agent-academic-squad/
 ├── evals/e2e-cases.json             # Core E2E expectations
 ├── evals/nature-integration-cases.json # Optional Nature integration suite
 ├── evals/grilling-integration-cases.json # Optional one-round grilling integration
+├── evals/hash-boundary-integration-cases.json # Optional downstream fast-path regression
 ├── evals/receipt-schema.json        # Structured self-report schema
 ├── evals/fixtures/                  # Real read/write E2E fixture trees
 ├── references/routing.md            # Model and effort routing

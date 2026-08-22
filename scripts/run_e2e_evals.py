@@ -66,6 +66,7 @@ KNOWN_EXTERNAL_SKILLS = (
     "nature-figure",
     "nature-response",
     "grilling",
+    "hash-boundary",
 )
 FORBIDDEN_ACTIONS = {
     "file_write",
@@ -430,6 +431,7 @@ def event_observations(
         "command_trace_available": bool(events),
         "workspace_changes": change_map,
         "changed_files": changed_paths,
+        "changed_leaf_paths": write_paths,
         "write_classes": sorted({classify_write(path) for path in write_paths}),
         "fixture_changes": fixture_changes,
         "final_message": receipt.get("answer", "") if receipt else (messages[-1] if messages else ""),
@@ -568,6 +570,21 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         "writes",
         f"expected={sorted(expected_writes)} observed={sorted(write_classes)}",
     )
+    changed_leaf_paths = set(observations.get("changed_leaf_paths", changes))
+    allowed_changed_paths = set(case.get("allowed_changed_paths", []))
+    required_changed_paths = set(case.get("required_changed_paths", []))
+    if allowed_changed_paths:
+        mark(
+            changed_leaf_paths <= allowed_changed_paths,
+            "allowed_changed_paths",
+            f"allowed={sorted(allowed_changed_paths)} observed={sorted(changed_leaf_paths)}",
+        )
+    if required_changed_paths:
+        mark(
+            required_changed_paths <= changed_leaf_paths,
+            "required_changed_paths",
+            f"required={sorted(required_changed_paths)} observed={sorted(changed_leaf_paths)}",
+        )
 
     if receipt is None:
         unknown("receipt", "receipt")
@@ -788,10 +805,12 @@ def evaluate_observations(case: dict[str, Any], observations: dict[str, Any]) ->
         else:
             unknown("forbidden:subagent", "trace_subagents")
     if "experiment_execution" in forbidden:
+        # `claimed_execution` covers any completed implementation, including a
+        # downstream-only edit. Only explicit experiment evidence can violate
+        # this boundary.
         detected = (
             experiment_command_detected(commands)
             or "experiment_execution" in performed
-            or bool(receipt and receipt.get("claimed_execution"))
         )
         if detected:
             failed.append("forbidden:experiment_execution")

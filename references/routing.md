@@ -44,6 +44,8 @@ Workload cost estimates the investigation, implementation, experiment, or readin
 
 Example: “Should I rerun after changing the timing boundary, or derive a corrected metric from saved sub-timers?” is a code/experiment `review`, not execution or broad experiment planning. Its workload is bounded if the active context already identifies the timing code and result artifacts, while its decision stakes may be high. Use Sol xhigh to verify the timer nesting, field completeness, and reporting semantics; do not rerun experiments or reconstruct the repository context from scratch.
 
+Calibrate workload from dependency depth, unresolved choices, semantic change, and actual execution cost. Do not infer complexity from repository size, academic importance, file or tool count, hashes, manifests, or QA alone. A precise downstream-only artifact revision remains bounded even when the artifact is publication-critical; raise verification strength without widening the task. When the user supplies or corrects an exact output contract, route from that narrower contract unless concrete evidence shows that an upstream semantic input also changed.
+
 ## Planning defaults
 
 | Planning shape | Default |

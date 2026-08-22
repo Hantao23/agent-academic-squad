@@ -70,6 +70,7 @@ def observations(receipt_value: dict[str, object] | None, **overrides: object) -
     value: dict[str, object] = {
         "turn_completed": True,
         "changed_files": [],
+        "changed_leaf_paths": [],
         "write_classes": [],
         "fixture_changes": [],
         "receipt": receipt_value,
@@ -87,6 +88,69 @@ def observations(receipt_value: dict[str, object] | None, **overrides: object) -
 
 
 class E2ERunnerTests(unittest.TestCase):
+    def test_hash_boundary_external_skill_trace_is_detected(self) -> None:
+        trace = "\n".join((
+            '{"type":"thread.started","thread_id":"t1"}',
+            '{"type":"item.completed","item":{"type":"skill_call","skill":"hash-boundary"}}',
+            '{"type":"turn.completed","usage":{"input_tokens":1}}',
+        ))
+        events, invalid = run_e2e_evals.parse_jsonl(trace)
+        observed = run_e2e_evals.event_observations(events, [])
+        self.assertEqual(invalid, [])
+        self.assertIn("hash-boundary", observed["invoked_external_skills_trace"])
+
+    def test_changed_path_contract_rejects_scope_expansion(self) -> None:
+        required = {
+            "fixtures/downstream-figure-refresh/plot_results.py",
+            "fixtures/downstream-figure-refresh/figures/outputs.txt",
+        }
+        expected = case_expected(
+            handling="direct",
+            subagents={"min": 0, "max": 0},
+            allowed_models=[],
+            required_models=[],
+            allowed_efforts=[],
+            final_states=["execution_complete"],
+            forbidden_actions=["subagent", "experiment_execution", "process_launch"],
+            writes=["workspace"],
+        )
+        expected["allowed_changed_paths"] = sorted(required)
+        expected["required_changed_paths"] = sorted(required)
+        direct_receipt = receipt(
+            final_state="execution_complete",
+            task_completed=True,
+            claimed_execution=True,
+            handling="direct",
+            runtime_agents=[],
+            performed_actions=["artifact_modification"],
+        )
+        accepted = run_e2e_evals.evaluate_observations(
+            expected,
+            observations(
+                direct_receipt,
+                changed_files=sorted(required),
+                changed_leaf_paths=sorted(required),
+                write_classes=["workspace"],
+                skill_invoked=True,
+                subagent_count=0,
+            ),
+        )
+        self.assertEqual(accepted["status"], "pass")
+        self.assertFalse(any("changed_paths" in check for check in accepted["failed_checks"]))
+
+        expanded = run_e2e_evals.evaluate_observations(
+            expected,
+            observations(
+                direct_receipt,
+                changed_files=sorted(required | {"fixtures/downstream-figure-refresh/data/summary.csv"}),
+                changed_leaf_paths=sorted(required | {"fixtures/downstream-figure-refresh/data/summary.csv"}),
+                write_classes=["workspace"],
+                skill_invoked=True,
+                subagent_count=0,
+            ),
+        )
+        self.assertTrue(any("allowed_changed_paths" in check for check in expanded["failed_checks"]))
+
     def test_grilling_external_skill_trace_is_detected(self) -> None:
         trace = "\n".join((
             '{"type":"thread.started","thread_id":"t1"}',

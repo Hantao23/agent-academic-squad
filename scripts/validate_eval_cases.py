@@ -18,6 +18,7 @@ E2E_MANIFESTS = (
     ROOT / "evals" / "e2e-cases.json",
     ROOT / "evals" / "nature-integration-cases.json",
     ROOT / "evals" / "grilling-integration-cases.json",
+    ROOT / "evals" / "hash-boundary-integration-cases.json",
 )
 RECEIPT_SCHEMA = ROOT / "evals" / "receipt-schema.json"
 REQUIRED_COLUMNS = {
@@ -38,7 +39,7 @@ ALLOWED_CONSTRAINTS = {
     "sensitive_no_store", "explicit_general", "proportional_direct",
     "project_artifact_boundary", "one_round_blocker_batch",
     "max_two_subagents_per_turn", "phase_split_if_overloaded", "emergent_overrun",
-    "explain_staged_cost",
+    "explain_staged_cost", "downstream_artifact_fast_path", "no_scope_inflation",
 }
 NEGATED_SHORTCUT_PHRASES = (
     "不用小分队", "不要用小分队", "别用小分队", "不要使用小分队",
@@ -53,7 +54,7 @@ E2E_EXPECTED_FIELDS = {
 }
 E2E_CASE_FIELDS = {
     "id", "source_case_id", "prompt", "sandbox", "expected", "fixture",
-    "required_external_skills",
+    "required_external_skills", "allowed_changed_paths", "required_changed_paths",
 }
 ALLOWED_SANDBOXES = {"read-only", "workspace-write"}
 ALLOWED_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
@@ -164,6 +165,14 @@ def validate_e2e_manifest(path: Path, source_case_ids: set[str]) -> int:
         if fixture is not None and (not isinstance(fixture, str) or not (ROOT / "evals" / "fixtures" / fixture).is_dir()):
             fail(f"{prefix}: missing fixture")
         require_string_list(case.get("required_external_skills", []), f"{prefix}.required_external_skills")
+        allowed_changed = require_string_list(case.get("allowed_changed_paths", []), f"{prefix}.allowed_changed_paths")
+        required_changed = require_string_list(case.get("required_changed_paths", []), f"{prefix}.required_changed_paths")
+        if not set(required_changed) <= set(allowed_changed):
+            fail(f"{prefix}: required_changed_paths must be a subset of allowed_changed_paths")
+        for path_value in allowed_changed:
+            path = Path(path_value)
+            if path.is_absolute() or ".." in path.parts:
+                fail(f"{prefix}: changed paths must stay inside the eval workspace")
 
         expected = case["expected"]
         if not isinstance(expected, dict) or set(expected) != E2E_EXPECTED_FIELDS:

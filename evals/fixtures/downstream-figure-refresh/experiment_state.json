@@ -1,0 +1,7 @@
+{
+  "conditions_completed": 180,
+  "upstream_semantics": "unchanged",
+  "upstream_compatibility_key": "experiment-v1",
+  "recorded_plotting_qa_hash": "standalone-v1",
+  "requested_plotting_qa_hash": "grouped-v2"
+}

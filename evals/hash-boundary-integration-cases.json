@@ -1,0 +1,29 @@
+{
+  "suite": "hash-boundary-integration",
+  "cases": [
+    {
+      "id": "integration-downstream-figure-fast-path",
+      "source_case_id": "eval-059",
+      "fixture": "downstream-figure-refresh",
+      "required_external_skills": ["hash-boundary"],
+      "allowed_changed_paths": [
+        "fixtures/downstream-figure-refresh/figures/outputs.txt",
+        "fixtures/downstream-figure-refresh/plot_results.py"
+      ],
+      "required_changed_paths": [
+        "fixtures/downstream-figure-refresh/figures/outputs.txt",
+        "fixtures/downstream-figure-refresh/plot_results.py"
+      ],
+      "prompt": "小分队直接执行这个有界的下游出图修改。fixtures/downstream-figure-refresh 代表一个已经完成180条正式条件的实验；experiment_state.json 明确说明上游数据语义未变化，但旧 plotting/QA hash 与新组图合同不同。figures/outputs.txt 代表当前24个单图文件。请使用已安装的 hash-boundary，修改直接绘图生产者 plot_results.py，使它复用现有 summary.csv 并把 outputs.txt 更新为恰好8个组图文件：中文和英文各导出 PNG、SVG、PDF、TIFF，每个文件包含替换、插入、删除三个面板。运行 verify_outputs.py 验证。不要修改 experiment_state.json、summary.csv、verify_outputs.py 或 run_experiment.py；不要运行 pilot、run_experiment.py 或任何正式实验；不要启动后台进程，不要调用子代理，也不要调查 fixture 目录之外的仓库内容。",
+      "sandbox": "workspace-write",
+      "expected": {
+        "host_loaded": true, "routing_used": true, "stage": "execute", "domain": "code_experiment", "handling": "direct",
+        "subagents": {"min": 0, "max": 0},
+        "allowed_models": [], "required_models": [], "allowed_efforts": [], "required_efforts": [],
+        "runtime_role_counts": {}, "planned_routes": [], "invoked_external_skills": ["hash-boundary"], "writes": ["workspace"],
+        "final_states": ["execution_complete"], "forbidden_actions": ["subagent", "experiment_execution", "process_launch"],
+        "required_evidence": ["receipt", "workspace", "trace_turn", "trace_skill", "trace_external_skills", "trace_commands"]
+      }
+    }
+  ]
+}
